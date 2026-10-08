@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="メッセージを書くと鶴が一羽折られる、みんなで作る千羽鶴。">
+<title>インターネット千羽鶴</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: 上にメッセージを書く紙、下に十羽ずつ糸に吊るされた鶴の束。鶴をクリックすると白い内側が開いて手紙になる */
+:root {
+  --bg: #eef0ee;
+  --surface: #f9faf8;
+  --fg: #23262b;
+  --muted: #6b7068;
+  --line: #d3d7d0;
+  --thread: #b9a98a;
+  --accent: #b8323f;
+  --accent-fg: #ffffff;
+  --scrim: rgba(30, 32, 28, .45);
+  /* 折り紙の内側（白い面）は両テーマ共通 */
+  --paper-inside: #fbfaf6;
+  --paper-ink: #2a2a2a;
+  --paper-crease: rgba(0,0,0,.08);
+  --f-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-hand: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-num: ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171d; --surface: #1d2129; --fg: #e9e7e1; --muted: #9aa0a8;
+    --line: #2e333d; --thread: #7d6f58; --accent: #e0606b; --accent-fg: #1a0e10;
+    --scrim: rgba(0,0,0,.6); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171d; --surface: #1d2129; --fg: #e9e7e1; --muted: #9aa0a8;
+  --line: #2e333d; --thread: #7d6f58; --accent: #e0606b; --accent-fg: #1a0e10;
+  --scrim: rgba(0,0,0,.6); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+:root { color-scheme: light; }
+html, body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.7;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding: 40px 20px 80px; display: grid; gap: 36px; }
+
+header { display: grid; gap: 14px; }
+h1 { font-family: var(--f-display); font-weight: 900; letter-spacing: .04em; font-size: clamp(34px, 6vw, 52px); line-height: 1.2; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 36em; }
+.progress { display: grid; gap: 6px; max-width: 420px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.progress-label b { font-family: var(--f-num); color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .6s ease; }
+
+/* 書く */
+.compose {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 22px; display: grid; gap: 16px;
+}
+.compose h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.field { display: grid; gap: 6px; }
+.field label, .field .lbl { font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+input[type=text], textarea {
+  font: inherit; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; width: 100%;
+}
+textarea { min-height: 110px; resize: vertical; font-family: var(--f-hand); font-size: 16px; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.row { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: end; justify-content: space-between; }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch {
+  width: 30px; height: 30px; border-radius: 3px; border: 2px solid transparent; cursor: pointer; padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+}
+.swatch[aria-checked="true"] { border-color: var(--fg); transform: rotate(45deg) scale(.86); }
+.swatch { transition: transform .2s; }
+.color-name { color: var(--fg); margin-left: 6px; letter-spacing: 0; }
+.swatch.custom {
+  position: relative; display: grid; place-items: center; overflow: hidden;
+  background: conic-gradient(#e05a35, #e9d24a, #4f9a6c, #79b4dc, #6b3f8a, #d9649a, #e05a35);
+}
+.swatch.custom span { font-size: 16px; line-height: 1; color: #fff; font-weight: 700; text-shadow: 0 0 3px rgba(0,0,0,.5); pointer-events: none; }
+.swatch.custom.set span { display: none; }
+.swatch.custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.swatch.custom:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.count { font-size: 12px; color: var(--muted); font-family: var(--f-num); text-align: right; }
+.fold-btn {
+  font: inherit; font-weight: 700; background: var(--accent); color: var(--accent-fg);
+  border: 0; border-radius: 4px; padding: 11px 22px; cursor: pointer;
+}
+.fold-btn:disabled { opacity: .45; cursor: not-allowed; }
+.status { font-size: 13px; color: var(--muted); min-height: 1.4em; margin: 0; }
+
+/* 吊るされた鶴 */
+.hang-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.hang-head h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 22px; }
+.hang-head p { margin: 0; font-size: 13px; color: var(--muted); }
+.rail { height: 8px; border-radius: 4px; background: var(--thread); opacity: .7; }
+.strands {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 0 8px; align-items: start; margin-top: -4px;
+}
+.strand { position: relative; display: grid; justify-items: center; padding-top: 10px; gap: 2px; }
+.strand::before {
+  content: ""; position: absolute; top: 0; bottom: 14px; left: 50%; width: 1px;
+  background: var(--thread);
+}
+.strand::after {
+  content: ""; width: 8px; height: 14px; border-radius: 0 0 4px 4px; background: var(--thread); position: relative;
+}
+.crane {
+  position: relative; background: none; border: 0; padding: 2px 0 0; cursor: pointer;
+  display: grid; justify-items: center; color: var(--muted);
+  transition: transform .25s ease;
+}
+.crane svg { width: 64px; height: 50px; display: block; filter: drop-shadow(0 2px 2px rgba(0,0,0,.15)); }
+.crane:nth-child(odd) svg { transform: scaleX(-1); }
+.crane:hover { transform: translateY(-3px) rotate(-4deg); }
+.crane .no {
+  font-family: var(--f-num); font-size: 10px; line-height: 1; font-variant-numeric: tabular-nums;
+  background: var(--bg); padding: 1px 3px; border-radius: 2px; position: relative;
+}
+.crane.new { animation: drop .9s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes drop { from { transform: translateY(-60px) scale(.3) rotate(-30deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.crane.ghost { cursor: default; opacity: .32; }
+.crane.ghost:hover { transform: none; }
+.crane.ghost svg { filter: none; }
+
+.credit { margin: 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); text-align: right; letter-spacing: .04em; }
+.empty {
+  border: 1px dashed var(--line); border-radius: 6px; padding: 28px 20px; text-align: center; color: var(--muted);
+}
+.empty strong { display: block; color: var(--fg); font-weight: 500; margin-bottom: 4px; }
+.demo-note { font-size: 12px; color: var(--muted); border-left: 3px solid var(--thread); padding-left: 10px; margin: 0; }
+
+/* 開いた鶴 */
+.overlay {
+  position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center;
+  padding: 20px; z-index: 10; animation: fade .25s ease;
+}
+@keyframes fade { from { opacity: 0; } }
+.letter-wrap { position: relative; width: min(440px, 100%); display: grid; justify-items: center; gap: 14px; }
+.fly-crane { position: absolute; top: 30%; width: 120px; pointer-events: none; animation: unfoldCrane .55s ease forwards; }
+@keyframes unfoldCrane { to { transform: scale(1.8) rotate(25deg); opacity: 0; } }
+.letter {
+  position: relative; width: 100%; aspect-ratio: 1; max-width: 100%;
+  background: var(--paper-inside); color: var(--paper-ink);
+  border-radius: 2px; box-shadow: 0 18px 40px rgba(0,0,0,.25);
+  padding: 13% 12% 12%; display: grid; grid-template-rows: auto auto 1fr auto; gap: 10px;
+  animation: unfoldPaper .7s .25s cubic-bezier(.2,.8,.2,1) both;
+  transform-origin: 50% 40%; overflow: hidden;
+}
+@keyframes unfoldPaper {
+  0% { transform: scale(.15) rotate(-45deg); opacity: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  55% { transform: scale(.85) rotate(-8deg); opacity: 1; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  100% { transform: none; opacity: 1; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+.letter .creases { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.letter .edge { position: absolute; inset: 0; border: 6px solid var(--c); opacity: .9; pointer-events: none; }
+.letter .no-big { font-family: var(--f-num); font-size: 12px; letter-spacing: .1em; color: #8a857a; position: relative; }
+.letter .msg {
+  font-family: var(--f-hand); font-size: clamp(16px, 4.2vw, 20px); line-height: 1.75;
+  white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; position: relative; min-height: 0;
+}
+.letter .photo {
+  position: relative; display: block; max-width: 100%; max-height: min(190px, 34vh); justify-self: center;
+  border: 4px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.18); transform: rotate(-1.5deg);
+}
+.letter .from { text-align: right; font-family: var(--f-hand); font-size: 15px; color: #5d5950; position: relative; }
+.letter-actions { display: flex; gap: 10px; animation: fade .3s .8s both; }
+.ghost-btn {
+  font: inherit; font-size: 14px; background: var(--surface); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 4px; padding: 8px 16px; cursor: pointer;
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.img-pick { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.img-pick label.ghost-btn { font-size: 14px; color: var(--fg); letter-spacing: 0; }
+.img-pick:focus-within label.ghost-btn { outline: 2px solid var(--accent); outline-offset: 2px; }
+.img-preview { display: flex; gap: 10px; align-items: center; }
+.img-preview img { width: 64px; height: 64px; object-fit: cover; border-radius: 3px; border: 1px solid var(--line); }
+.hint { font-size: 12px; color: var(--muted); }
+.crane .has-img { position: absolute; top: 4px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+@media (max-width: 520px) {
+  .wrap { padding-top: 28px; }
+  .strands { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 0 4px; }
+  .crane svg { width: 50px; height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>インターネット千羽鶴</h1>
+    <p class="lede">メッセージを書くと、鶴が一羽折られます。どの鶴も、ひらくと中に書かれた言葉と画像が見られます。</p>
+    <div class="progress" aria-live="polite">
+      <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
+      <div class="bar"><span id="bar"></span></div>
+    </div>
+  </header>
+
+  <form class="compose" id="compose" autocomplete="off">
+    <h2>一羽折る</h2>
+    <div class="field">
+      <label for="msg">メッセージ</label>
+      <textarea id="msg" maxlength="300" placeholder="例：無理せず、ゆっくり休んでね。また一緒に遊ぼう！" required></textarea>
+    </div>
+    <div class="row">
+      <div class="field" style="flex:1 1 200px; min-width:0">
+        <label for="from">名前（ハンドルネーム・空欄で匿名）</label>
+        <input type="text" id="from" maxlength="30" placeholder="匿名">
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl" id="color-lbl">折り紙の色 <span class="color-name" id="color-name">紅</span></span>
+      <div class="swatches" id="swatches" role="radiogroup" aria-labelledby="color-lbl">
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl">画像（任意）</span>
+      <div class="img-pick">
+        <label class="ghost-btn" for="img">画像をえらぶ</label>
+        <input type="file" id="img" accept="image/*" class="sr-only">
+        <div class="img-preview" id="img-preview" hidden>
+          <img id="img-thumb" alt="添付する画像のプレビュー">
+          <button type="button" class="ghost-btn" id="img-clear">はずす</button>
+        </div>
+        <span class="hint" id="img-hint">写真やイラストを1枚まで。自動で小さくして保存します。</span>
+      </div>
+    </div>
+    <div class="row">
+      <p class="status" id="status"></p>
+      <div style="display:flex; gap:14px; align-items:center">
+        <span class="count" id="charcount">0 / 300</span>
+        <button class="fold-btn" id="fold" type="submit">鶴を折る</button>
+      </div>
+    </div>
+  </form>
+
+  <section style="display:grid; gap:12px">
+    <div class="hang-head">
+      <h2>集まった鶴</h2>
+      <p>鶴をクリックするとひらきます。</p>
+    </div>
+    <p class="demo-note" id="demo-note" hidden>お試し表示です（Firebase の設定がまだ入っていません）。ここに出ている鶴は見本で、折った鶴はこのブラウザの中にだけ残ります。</p>
+    <div>
+      <div class="rail"></div>
+      <div class="strands" id="strands"></div>
+    </div>
+    <div class="empty" id="empty" hidden>
+      <strong>まだ一羽も折られていません</strong>
+      上のフォームにメッセージを書くと、No.0001 の鶴がここに集まります。
+    </div>
+  </section>
+  <p class="credit">制作：dog</p>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="letter-wrap" role="dialog" aria-modal="true" aria-labelledby="letter-no">
+    <div class="letter" id="letter">
+      <div class="edge"></div>
+      <svg class="creases" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <g stroke="var(--paper-crease)" stroke-width=".4" fill="none">
+          <path d="M0 0L100 100M100 0L0 100M50 0V100M0 50H100"/>
+          <path d="M50 0L100 50L50 100L0 50Z"/>
+          <path d="M25 25L75 25L75 75L25 75Z"/>
+        </g>
+      </svg>
+      <div class="no-big" id="letter-no"></div>
+      <img class="photo" id="letter-img" alt="" hidden>
+      <div class="msg" id="letter-msg"></div>
+      <div class="from" id="letter-from"></div>
+    </div>
+    <div class="letter-actions">
+      <button class="ghost-btn" id="prev" type="button">← 前の鶴</button>
+      <button class="ghost-btn" id="close" type="button">たたむ</button>
+      <button class="ghost-btn" id="next" type="button">次の鶴 →</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, query, orderBy, onSnapshot, runTransaction, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ▼ Firebase コンソールの「ウェブアプリを追加」で出てくる firebaseConfig を、ここにまるごと貼り付けてください
+const firebaseConfig = {
+  apiKey: "AIzaSyAnjErAJOxsFaRQkS5fv91vVWJKa2JjYqM",
+  authDomain: "internet-senbazuru.firebaseapp.com",
+  projectId: "internet-senbazuru",
+  storageBucket: "internet-senbazuru.firebasestorage.app",
+  messagingSenderId: "373539060929",
+  appId: "1:373539060929:web:f20fdffb71534bae882840",
+  measurementId: "G-PKH306983M"
+};
+// ▲ ここまで
+
+(() => {
+  const GOAL = 1000, PER_STRAND = 10;
+  const COLORS = [
+    { id: "beni", name: "紅", hex: "#c8384a" },
+    { id: "shu", name: "朱", hex: "#e05a35" },
+    { id: "sango", name: "珊瑚", hex: "#f08a7a" },
+    { id: "sakura", name: "桜", hex: "#e8a0b4" },
+    { id: "momo", name: "桃", hex: "#d9649a" },
+    { id: "yamabuki", name: "山吹", hex: "#e3a234" },
+    { id: "remon", name: "レモン", hex: "#e9d24a" },
+    { id: "moegi", name: "萌黄", hex: "#a2c048" },
+    { id: "wakatake", name: "若竹", hex: "#4f9a6c" },
+    { id: "seiji", name: "青磁", hex: "#7fb5a6" },
+    { id: "mizu", name: "水色", hex: "#79b4dc" },
+    { id: "ruri", name: "瑠璃", hex: "#2f5d9e" },
+    { id: "kon", name: "紺", hex: "#22386a" },
+    { id: "fuji", name: "藤", hex: "#a08cc8" },
+    { id: "murasaki", name: "紫", hex: "#6b3f8a" },
+    { id: "cha", name: "茶", hex: "#8b5a3c" },
+    { id: "sumi", name: "墨", hex: "#3a3a3e" },
+    { id: "shiro", name: "白", hex: "#f4f2ec" },
+    { id: "kogane", name: "金", hex: "#c9a64a" },
+    { id: "gin", name: "銀", hex: "#b4b9c0" },
+  ];
+  // 色は基本色の id か、自分で選んだ "#rrggbb"。共有データは信用せず形を確かめる
+  const colorHex = v => {
+    if (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v)) return v;
+    return (COLORS.find(c => c.id === v) || COLORS[0]).hex;
+  };
+
+  const $ = id => document.getElementById(id);
+  let cranes = [];       // {n, msg, from, color}
+  let db = null;         // Firestore。設定前（お試し）は null
+  let picked = COLORS[0].id;
+  let openIdx = -1;
+  let justFolded = null;
+
+  // 鶴の形（横向き）。紙の色にかげを重ねて立体に見せる
+  function craneSVG(hex) {
+    return `<svg viewBox="0 0 100 78" aria-hidden="true">
+      <polygon points="52,44 82,6 60,42" fill="${hex}"/>
+      <polygon points="52,44 82,6 60,42" fill="#000" opacity=".22"/>
+      <polygon points="30,50 52,44 72,50 52,60" fill="${hex}"/>
+      <polygon points="52,44 72,50 52,60" fill="#000" opacity=".12"/>
+      <polygon points="66,50 90,24 62,49" fill="${hex}"/>
+      <polygon points="34,50 16,24 41,49" fill="${hex}"/>
+      <polygon points="34,50 16,24 41,49" fill="#000" opacity=".08"/>
+      <polygon points="16,24 9,29 18,27" fill="${hex}"/>
+      <polygon points="52,46 22,8 44,42" fill="${hex}"/>
+      <polygon points="52,46 22,8 44,42" fill="#fff" opacity=".18"/>
+    </svg>`;
+  }
+  const pad = n => String(n).padStart(4, "0");
+
+  // 色えらび：基本色＋「自分で選ぶ」
+  function select(el, value, name) {
+    picked = value;
+    $("color-name").textContent = name;
+    document.querySelectorAll(".swatch").forEach(s => s.setAttribute("aria-checked", s === el));
+  }
+  COLORS.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "swatch"; b.style.background = c.hex;
+    b.setAttribute("role", "radio"); b.setAttribute("aria-label", c.name); b.title = c.name;
+    b.setAttribute("aria-checked", c.id === picked);
+    b.onclick = () => select(b, c.id, c.name);
+    $("swatches").appendChild(b);
+  });
+  const custom = document.createElement("label");
+  custom.className = "swatch custom"; custom.title = "自分で選ぶ";
+  custom.setAttribute("role", "radio"); custom.setAttribute("aria-checked", "false");
+  custom.innerHTML = '<input type="color" id="custom-color" value="#5fb3a1" aria-label="自分で色を選ぶ"><span>＋</span>';
+  $("swatches").appendChild(custom);
+  const cc = custom.querySelector("input");
+  const useCustom = () => {
+    custom.style.background = cc.value; custom.classList.add("set");
+    select(custom, cc.value.toLowerCase(), "自分で選んだ色 " + cc.value.toLowerCase());
+  };
+  cc.addEventListener("input", useCustom);
+  cc.addEventListener("click", () => { if (custom.classList.contains("set")) useCustom(); });
+
+  $("msg").addEventListener("input", () => {
+    $("charcount").textContent = `${$("msg").value.length} / 300`;
+  });
+
+  function render() {
+    const total = cranes.length;
+    $("n-count").textContent = total;
+    $("n-left").textContent = Math.max(0, GOAL - total);
+    $("bar").style.width = Math.min(100, total / GOAL * 100) + "%";
+    $("empty").hidden = total > 0;
+
+    const box = $("strands");
+    box.innerHTML = "";
+    if (!total) return;
+    // 最後の糸の残りは、これから折られる鶴の場所として薄く見せる
+    const slots = Math.ceil(total / PER_STRAND) * PER_STRAND;
+    let strand;
+    for (let i = 0; i < slots; i++) {
+      if (i % PER_STRAND === 0) {
+        strand = document.createElement("div");
+        strand.className = "strand";
+        box.appendChild(strand);
+      }
+      const c = cranes[i];
+      const el = document.createElement("button");
+      el.type = "button";
+      if (c) {
+        el.className = "crane" + (c.n === justFolded ? " new" : "");
+        el.innerHTML = craneSVG(colorHex(c.color)) + `<span class="no">${pad(c.n)}</span>` + (c.img ? '<span class="has-img"></span>' : "");
+        el.setAttribute("aria-label", `No.${pad(c.n)} の鶴をひらく`);
+        el.onclick = () => openLetter(i);
+      } else {
+        el.className = "crane ghost"; el.disabled = true; el.tabIndex = -1;
+        el.innerHTML = craneSVG("#9a9a9a") + `<span class="no">${pad(i + 1)}</span>`;
+        el.setAttribute("aria-hidden", "true");
+      }
+      strand.appendChild(el);
+    }
+    justFolded = null;
+  }
+
+  function openLetter(i) {
+    openIdx = i;
+    const c = cranes[i];
+    const ov = $("overlay");
+    ov.hidden = true; void ov.offsetWidth; // アニメーションを毎回やり直す
+    ov.querySelector(".fly-crane")?.remove();
+    const fly = document.createElement("div");
+    fly.className = "fly-crane"; fly.innerHTML = craneSVG(colorHex(c.color));
+    ov.querySelector(".letter-wrap").prepend(fly);
+    $("letter").style.setProperty("--c", colorHex(c.color));
+    $("letter-no").textContent = `No.${pad(c.n)}`;
+    $("letter-msg").textContent = c.msg;
+    const li = $("letter-img");
+    if (typeof c.img === "string" && c.img.startsWith("data:image/")) { li.src = c.img; li.alt = `No.${pad(c.n)} に添えられた画像`; li.hidden = false; }
+    else { li.removeAttribute("src"); li.hidden = true; }
+    $("letter-from").textContent = "— " + (c.from || "匿名");
+    $("prev").disabled = i === 0;
+    $("next").disabled = i === cranes.length - 1;
+    ov.hidden = false;
+    $("close").focus();
+  }
+  function closeLetter() { $("overlay").hidden = true; openIdx = -1; }
+  $("close").onclick = closeLetter;
+  $("prev").onclick = () => openIdx > 0 && openLetter(openIdx - 1);
+  $("next").onclick = () => openIdx < cranes.length - 1 && openLetter(openIdx + 1);
+  $("overlay").addEventListener("click", e => { if (e.target === $("overlay")) closeLetter(); });
+  document.addEventListener("keydown", e => {
+    if ($("overlay").hidden) return;
+    if (e.key === "Escape") closeLetter();
+    if (e.key === "ArrowLeft") $("prev").click();
+    if (e.key === "ArrowRight") $("next").click();
+  });
+
+  // 画像：長い辺を 720px までに縮めて JPEG にし、鶴と一緒に保存する
+  let pickedImg = null;
+  function clearImg() {
+    pickedImg = null; $("img").value = "";
+    $("img-preview").hidden = true; $("img-thumb").removeAttribute("src");
+    $("img-hint").textContent = "写真やイラストを1枚まで。自動で小さくして保存します。";
+  }
+  function shrink(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const im = new Image();
+      im.onload = () => {
+        const MAX = 720, k = Math.min(1, MAX / Math.max(im.width, im.height));
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(im, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        // 保存できる大きさ（約 45 万文字）に収まるまで画質を下げる
+        let q = 0.8, out = cv.toDataURL("image/jpeg", q);
+        while (out.length > 450000 && q > 0.35) { q -= 0.1; out = cv.toDataURL("image/jpeg", q); }
+        out.length > 450000 ? reject(new Error("too big")) : resolve(out);
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); reject(new Error("bad image")); };
+      im.src = url;
+    });
+  }
+  $("img").addEventListener("change", async () => {
+    const f = $("img").files[0];
+    if (!f) return;
+    try {
+      pickedImg = await shrink(f);
+      $("img-thumb").src = pickedImg;
+      $("img-preview").hidden = false;
+      $("img-hint").textContent = f.name;
+    } catch {
+      clearImg();
+      $("img-hint").textContent = "この画像は読み込めませんでした。JPEG や PNG を選んでください。";
+    }
+  });
+  $("img-clear").onclick = clearImg;
+
+  // 折る
+  $("compose").addEventListener("submit", async e => {
+    e.preventDefault();
+    const msg = $("msg").value.trim();
+    if (!msg) { $("status").textContent = "メッセージを書いてから折ってください。"; return; }
+    const from = $("from").value.trim();
+    $("fold").disabled = true;
+    $("status").textContent = "折っています…";
+    try {
+      const n = db ? await foldShared(msg, from, picked, pickedImg) : foldLocal(msg, from, picked, pickedImg);
+      justFolded = n;
+      if (!db) render();
+      $("msg").value = ""; $("charcount").textContent = "0 / 300"; clearImg();
+      $("status").textContent = `No.${pad(n)} の鶴を折りました。ありがとう！`;
+    } catch (err) {
+      console.error(err);
+      $("status").textContent = err && err.code === "permission-denied"
+        ? "保存が断られました。メッセージは300字まで、名前は30字までにしてもう一度押してください。"
+        : "うまく折れませんでした。少し待ってからもう一度押してください。";
+    } finally {
+      $("fold").disabled = false;
+    }
+  });
+
+  // 通し番号：meta/counter の数を1増やし、同じ番号の鶴を同時に作る。
+  // 同時に誰かが折った場合は Firebase が自動でやり直すので、番号は重ならない
+  async function foldShared(msg, from, color, img) {
+    const counterRef = doc(db, "meta", "counter");
+    return runTransaction(db, async tx => {
+      const snap = await tx.get(counterRef);
+      const n = (snap.exists() ? snap.data().count : 0) + 1;
+      const data = { n, msg, from, color, at: serverTimestamp() };
+      if (img) data.img = img;
+      tx.set(counterRef, { count: n });
+      tx.set(doc(db, "cranes", String(n)), data);
+      return n;
+    });
+  }
+
+  // お試しモード（firebaseConfig を貼る前）
+  const LS_KEY = "senbazuru-demo";
+  const SAMPLES = [
+    { msg: "いつも配信楽しみにしてます。今はしっかり休んでね。", from: "みかん", color: "yamabuki" },
+    { msg: "焦らなくて大丈夫。戻ってくる場所はちゃんとあるよ。", from: "", color: "ruri" },
+    { msg: "元気になったらまた夜通しゲームしよう！", from: "tsukasa", color: "beni" },
+    { msg: "あなたの言葉にたくさん救われてきました。今度はこちらが応援する番です。", from: "ふじ", color: "fuji" },
+    { msg: "ごはん食べて、あったかくして寝てね。", from: "", color: "sakura" },
+    { msg: "千羽そろうまでみんなで折ります。", from: "Leo", color: "wakatake" },
+    { msg: "待ってるよ〜！", from: "ぽん", color: "kogane" },
+  ];
+  function foldLocal(msg, from, color, img) {
+    const n = cranes.length + 1;
+    cranes.push({ n, msg, from, color, img: img || undefined, mine: true });
+    try { localStorage.setItem(LS_KEY, JSON.stringify(cranes.filter(c => c.mine))); } catch {}
+    return n;
+  }
+  function startDemo() {
+    $("demo-note").hidden = false;
+    cranes = SAMPLES.map((s, i) => ({ n: i + 1, ...s }));
+    try {
+      const mine = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+      mine.forEach(m => cranes.push({ ...m, n: cranes.length + 1, mine: true }));
+    } catch {}
+    render();
+  }
+
+  // 起動
+  render();
+  const configured = firebaseConfig.projectId && !firebaseConfig.apiKey.startsWith("ここに");
+  if (!configured) { startDemo(); return; }
+  try {
+    db = getFirestore(initializeApp(firebaseConfig));
+  } catch (err) {
+    console.error(err);
+    $("status").textContent = "Firebase の設定が読めませんでした。firebaseConfig の貼り付けを確認してください。";
+    return;
+  }
+  onSnapshot(query(collection(db, "cranes"), orderBy("n", "asc")), snap => {
+    cranes = snap.docs.map(d => d.data()).filter(c => c && typeof c.n === "number" && typeof c.msg === "string");
+    render();
+  }, err => {
+    console.error(err);
+    $("status").textContent = "鶴を読み込めませんでした。ページを開き直してください。";
+  });
+})();
+</script>
+</body>
+</html>
