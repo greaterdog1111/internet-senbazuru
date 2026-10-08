@@ -209,7 +209,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 <div class="wrap">
   <header>
     <h1>インターネット千羽鶴</h1>
-    <p class="lede">メッセージを書くと、鶴が一羽折られます。どの鶴も、ひらくと中に書かれた言葉と画像が見られます。</p>
+    <p class="lede">メッセージを書くと、鶴が一羽折られます。鶴をひらくと中に書かれた言葉と画像が見られます。</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
@@ -220,11 +220,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
     <h2>一羽折る</h2>
     <div class="field">
       <label for="msg">メッセージ</label>
-      <textarea id="msg" maxlength="300" placeholder="例：無理せず、ゆっくり休んでね。また一緒に遊ぼう！" required></textarea>
+      <textarea id="msg" maxlength="300" placeholder="例：無理せず休んでね。また一緒に遊ぼう！" required></textarea>
     </div>
     <div class="row">
       <div class="field" style="flex:1 1 200px; min-width:0">
-        <label for="from">名前（ハンドルネーム・空欄で匿名）</label>
+        <label for="from">名前（空欄で匿名）</label>
         <input type="text" id="from" maxlength="30" placeholder="匿名">
       </div>
     </div>
