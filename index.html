@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="メッセージを書くと鶴が一羽折られる、みんなで作る千羽鶴。">
+<meta name="description" content="みんなでメッセージを書いて折り鶴を量産しよう！折り鶴が増えると何かが起きるかもしれない">
 <title>インターネット千羽鶴</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -220,7 +220,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 <div class="wrap">
   <header>
     <h1>インターネット千羽鶴</h1>
-    <p class="lede">メッセージを書くと、鶴が一羽折られます。どの鶴も、ひらくと中に書かれた言葉と画像が見られます。</p>
+    <p class="lede">メッセージを書くと鶴が一羽折れます。折り鶴を開くと、中に書かれたメッセージ/画像が見れます。</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
@@ -231,11 +231,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
     <h2>一羽折る</h2>
     <div class="field">
       <label for="msg">メッセージ</label>
-      <textarea id="msg" maxlength="300" placeholder="例：無理せず、ゆっくり休んでね。また一緒に遊ぼう！" required></textarea>
+      <textarea id="msg" maxlength="300" placeholder="例：また一緒に遊ぼう！" required></textarea>
     </div>
     <div class="row">
       <div class="field" style="flex:1 1 200px; min-width:0">
-        <label for="from">名前（ハンドルネーム・空欄で匿名）</label>
+        <label for="from">名前（空欄は匿名）</label>
         <input type="text" id="from" maxlength="30" placeholder="匿名">
       </div>
     </div>
@@ -253,7 +253,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
           <img id="img-thumb" alt="添付する画像のプレビュー">
           <button type="button" class="ghost-btn" id="img-clear">はずす</button>
         </div>
-        <span class="hint" id="img-hint">写真やイラストを1枚まで。自動で小さくして保存します。</span>
+        <span class="hint" id="img-hint">写真やイラスト1枚まで</span>
       </div>
     </div>
     <div class="row">
@@ -267,8 +267,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 
   <section style="display:grid; gap:12px">
     <div class="hang-head">
-      <h2>集まった鶴</h2>
-      <p>鶴をクリックするとひらきます。左右にスワイプすると、ほかの糸も見られます。</p>
+      <h2>集まった鶴たち</h2>
+      <p>鶴をクリックするとひらきます。左右にスワイプで他の糸も見れます。</p>
     </div>
     <p class="demo-note" id="demo-note" hidden>お試し表示です（Firebase の設定がまだ入っていません）。ここに出ている鶴は見本で、折った鶴はこのブラウザの中にだけ残ります。</p>
     <div class="scroll-nav" id="scroll-nav" hidden>
