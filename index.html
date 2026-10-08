@@ -55,7 +55,7 @@ body {
 
 header { display: grid; gap: 14px; }
 h1 { font-family: var(--f-display); font-weight: 900; letter-spacing: .04em; font-size: clamp(34px, 6vw, 52px); line-height: 1.2; margin: 0; text-wrap: balance; }
-.lede { margin: 0; color: var(--muted);}
+.lede { margin: 0; color: var(--muted); }
 .progress { display: grid; gap: 6px; max-width: 420px; }
 .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
 .progress-label b { font-family: var(--f-num); color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -108,11 +108,19 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 .hang-head h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 22px; }
 .hang-head p { margin: 0; font-size: 13px; color: var(--muted); }
 .rail { height: 8px; border-radius: 4px; background: var(--thread); opacity: .7; }
-.strands {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 0 8px; align-items: start; margin-top: -4px;
+/* 糸の束は横に並べ、左右にスワイプ（スクロール）して見る */
+.scroller {
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+  padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: var(--thread) transparent;
 }
-.strand { position: relative; display: grid; justify-items: center; padding-top: 10px; gap: 2px; }
+.hanger { width: max-content; min-width: 100%; }
+.strands { display: flex; gap: 0 8px; align-items: start; margin-top: -4px; padding: 0 4px; }
+.scroll-nav { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.scroll-nav .where { font-size: 12px; color: var(--muted); font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.scroll-nav .btns { display: flex; gap: 6px; }
+.scroll-nav .ghost-btn { padding: 4px 12px; font-size: 13px; }
+.scroll-nav .ghost-btn:disabled { opacity: .4; cursor: default; }
+.strand { flex: 0 0 84px; scroll-snap-align: start; position: relative; display: grid; justify-items: center; padding-top: 10px; gap: 2px; }
 .strand::before {
   content: ""; position: absolute; top: 0; bottom: 14px; left: 50%; width: 1px;
   background: var(--thread);
@@ -147,20 +155,22 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 
 /* 開いた鶴 */
 .overlay {
-  position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center;
-  padding: 20px; z-index: 10; animation: fade .25s ease;
+  position: fixed; inset: 0; background: var(--scrim); display: flex; flex-direction: column;
+  padding: 20px 16px; z-index: 10; animation: fade .25s ease;
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
 }
 @keyframes fade { from { opacity: 0; } }
-.letter-wrap { position: relative; width: min(440px, 100%); display: grid; justify-items: center; gap: 14px; }
+/* margin:auto で中央に置きつつ、手紙が画面より長いときは上から読めてスクロールできる */
+.letter-wrap { margin: auto; position: relative; width: min(440px, 100%); display: grid; justify-items: center; gap: 14px; }
 .fly-crane { position: absolute; top: 30%; width: 120px; pointer-events: none; animation: unfoldCrane .55s ease forwards; }
 @keyframes unfoldCrane { to { transform: scale(1.8) rotate(25deg); opacity: 0; } }
 .letter {
-  position: relative; width: 100%; aspect-ratio: 1; max-width: 100%;
+  position: relative; width: 100%; max-width: 100%; min-height: min(440px, calc(100vw - 32px));  /* 正方形が基本、長い手紙は縦に伸びる */
   background: var(--paper-inside); color: var(--paper-ink);
   border-radius: 2px; box-shadow: 0 18px 40px rgba(0,0,0,.25);
   padding: 13% 12% 12%; display: grid; grid-template-rows: auto auto 1fr auto; gap: 10px;
   animation: unfoldPaper .7s .25s cubic-bezier(.2,.8,.2,1) both;
-  transform-origin: 50% 40%; overflow: hidden;
+  transform-origin: 50% 40%;
 }
 @keyframes unfoldPaper {
   0% { transform: scale(.15) rotate(-45deg); opacity: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
@@ -172,7 +182,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 .letter .no-big { font-family: var(--f-num); font-size: 12px; letter-spacing: .1em; color: #8a857a; position: relative; }
 .letter .msg {
   font-family: var(--f-hand); font-size: clamp(16px, 4.2vw, 20px); line-height: 1.75;
-  white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; position: relative; min-height: 0;
+  white-space: pre-wrap; overflow-wrap: anywhere; position: relative;
 }
 .letter .photo {
   position: relative; display: block; max-width: 100%; max-height: min(190px, 34vh); justify-self: center;
@@ -196,7 +206,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 
 @media (max-width: 520px) {
   .wrap { padding-top: 28px; }
-  .strands { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 0 4px; }
+  .strand { flex-basis: 64px; }
+  .strands { gap: 0 4px; }
   .crane svg { width: 50px; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -209,7 +220,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 <div class="wrap">
   <header>
     <h1>インターネット千羽鶴</h1>
-    <p class="lede">メッセージを書くと、鶴が一羽折られます。鶴をひらくと中に書かれた言葉と画像が見られます。</p>
+    <p class="lede">メッセージを書くと、鶴が一羽折られます。どの鶴も、ひらくと中に書かれた言葉と画像が見られます。</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
@@ -220,11 +231,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
     <h2>一羽折る</h2>
     <div class="field">
       <label for="msg">メッセージ</label>
-      <textarea id="msg" maxlength="300" placeholder="例：無理せず休んでね。また一緒に遊ぼう！" required></textarea>
+      <textarea id="msg" maxlength="300" placeholder="例：無理せず、ゆっくり休んでね。また一緒に遊ぼう！" required></textarea>
     </div>
     <div class="row">
       <div class="field" style="flex:1 1 200px; min-width:0">
-        <label for="from">名前（空欄で匿名）</label>
+        <label for="from">名前（ハンドルネーム・空欄で匿名）</label>
         <input type="text" id="from" maxlength="30" placeholder="匿名">
       </div>
     </div>
@@ -257,12 +268,23 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
   <section style="display:grid; gap:12px">
     <div class="hang-head">
       <h2>集まった鶴</h2>
-      <p>鶴をクリックするとひらきます。</p>
+      <p>鶴をクリックするとひらきます。左右にスワイプすると、ほかの糸も見られます。</p>
     </div>
     <p class="demo-note" id="demo-note" hidden>お試し表示です（Firebase の設定がまだ入っていません）。ここに出ている鶴は見本で、折った鶴はこのブラウザの中にだけ残ります。</p>
-    <div>
-      <div class="rail"></div>
-      <div class="strands" id="strands"></div>
+    <div class="scroll-nav" id="scroll-nav" hidden>
+      <span class="where" id="where"></span>
+      <div class="btns">
+        <button type="button" class="ghost-btn" id="to-first">最初</button>
+        <button type="button" class="ghost-btn" id="to-left" aria-label="左へ">←</button>
+        <button type="button" class="ghost-btn" id="to-right" aria-label="右へ">→</button>
+        <button type="button" class="ghost-btn" id="to-last">最新</button>
+      </div>
+    </div>
+    <div class="scroller" id="scroller">
+      <div class="hanger">
+        <div class="rail"></div>
+        <div class="strands" id="strands"></div>
+      </div>
     </div>
     <div class="empty" id="empty" hidden>
       <strong>まだ一羽も折られていません</strong>
@@ -423,6 +445,7 @@ const firebaseConfig = {
       el.type = "button";
       if (c) {
         el.className = "crane" + (c.n === justFolded ? " new" : "");
+        el.dataset.n = c.n;
         el.innerHTML = craneSVG(colorHex(c.color)) + `<span class="no">${pad(c.n)}</span>` + (c.img ? '<span class="has-img"></span>' : "");
         el.setAttribute("aria-label", `No.${pad(c.n)} の鶴をひらく`);
         el.onclick = () => openLetter(i);
@@ -433,8 +456,37 @@ const firebaseConfig = {
       }
       strand.appendChild(el);
     }
+    $("scroll-nav").hidden = false;
+    if (justFolded != null) showCrane(justFolded);
     justFolded = null;
+    updateWhere();
   }
+
+  // 横スクロールの位置表示と移動ボタン
+  const scroller = $("scroller");
+  function updateWhere() {
+    const strands = $("strands").children;
+    if (!strands.length) return;
+    const w = strands[0].getBoundingClientRect().width + 8;
+    const first = Math.min(strands.length, Math.floor(scroller.scrollLeft / w) + 1);
+    const last = Math.min(strands.length, Math.floor((scroller.scrollLeft + scroller.clientWidth) / w));
+    $("where").textContent = `糸 ${first}〜${Math.max(first, last)} 本目 / 全 ${strands.length} 本`;
+    const atStart = scroller.scrollLeft <= 2;
+    const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
+    $("to-first").disabled = $("to-left").disabled = atStart;
+    $("to-last").disabled = $("to-right").disabled = atEnd;
+  }
+  function showCrane(n) {
+    const el = $("strands").querySelector(`[data-n="${n}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }
+  scroller.addEventListener("scroll", updateWhere, { passive: true });
+  window.addEventListener("resize", updateWhere);
+  const page = () => Math.max(100, scroller.clientWidth * 0.8);
+  $("to-left").onclick = () => scroller.scrollBy({ left: -page(), behavior: "smooth" });
+  $("to-right").onclick = () => scroller.scrollBy({ left: page(), behavior: "smooth" });
+  $("to-first").onclick = () => scroller.scrollTo({ left: 0, behavior: "smooth" });
+  $("to-last").onclick = () => scroller.scrollTo({ left: scroller.scrollWidth, behavior: "smooth" });
 
   function openLetter(i) {
     openIdx = i;
@@ -454,10 +506,11 @@ const firebaseConfig = {
     $("letter-from").textContent = "— " + (c.from || "匿名");
     $("prev").disabled = i === 0;
     $("next").disabled = i === cranes.length - 1;
-    ov.hidden = false;
+    ov.hidden = false; ov.scrollTop = 0;
+    document.body.style.overflow = "hidden";
     $("close").focus();
   }
-  function closeLetter() { $("overlay").hidden = true; openIdx = -1; }
+  function closeLetter() { $("overlay").hidden = true; openIdx = -1; document.body.style.overflow = ""; }
   $("close").onclick = closeLetter;
   $("prev").onclick = () => openIdx > 0 && openLetter(openIdx - 1);
   $("next").onclick = () => openIdx < cranes.length - 1 && openLetter(openIdx + 1);
@@ -524,6 +577,7 @@ const firebaseConfig = {
       const n = db ? await foldShared(msg, from, picked, pickedImg) : foldLocal(msg, from, picked, pickedImg);
       justFolded = n;
       if (!db) render();
+      else if ($("strands").querySelector(`[data-n="${n}"]`)) { showCrane(n); justFolded = null; }
       $("msg").value = ""; $("charcount").textContent = "0 / 300"; clearImg();
       $("status").textContent = `No.${pad(n)} の鶴を折りました。ありがとう！`;
     } catch (err) {
