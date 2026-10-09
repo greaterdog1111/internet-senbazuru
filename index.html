@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
 <style>
+/* Layout: 上にメッセージを書く紙、下に十羽ずつ糸に吊るされた鶴の束。鶴をクリックすると白い内側が開いて手紙になる */
 :root {
   --bg: #eef0ee;
   --surface: #f9faf8;
@@ -164,6 +165,10 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 }
 .fold-btn:disabled { opacity: .45; cursor: not-allowed; }
 .status { font-size: 13px; color: var(--muted); min-height: 1.4em; margin: 0; }
+/* 「鶴を折る」はどの画面幅でも紙の右下。お知らせの文が長いときは上の行に回る */
+.submit-row { margin-top: auto; }
+.submit-row .status { flex: 1 1 180px; min-width: 0; }
+.submit-actions { display: flex; gap: 14px; align-items: center; margin-left: auto; }
 
 /* 吊るされた鶴 */
 .hang-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -265,7 +270,9 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 .img-preview { display: flex; gap: 10px; align-items: center; }
 .img-preview img { width: 64px; height: 64px; object-fit: cover; border-radius: 3px; border: 1px solid var(--line); }
 .hint { font-size: 12px; color: var(--muted); }
-.crane .has-img { position: absolute; top: 4px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+/* 右上の赤い点は、まだひらいていない鶴 */
+.crane .unread { position: absolute; top: 2px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #e0303a; box-shadow: 0 0 0 2px var(--bg); }
+
 
 @media (max-width: 520px) {
   .wrap { padding-top: 28px; }
@@ -328,17 +335,17 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 <div class="wrap">
   <header>
     <h1>インターネット千羽鶴</h1>
-    <p class="lede">メッセージを書くと鶴が一羽折れます。</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
     </div>
+    <p class="lede">メッセージを書くと鶴が一羽折れます。折り鶴を開くと、中に書かれたメッセージ/画像が見れます。</p>
   </header>
 
   <form class="compose" id="compose" autocomplete="off">
     <h2>一羽折る</h2>
     <div class="field msg-field">
-      <label for="msg">メッセージ</label>
+      <label for="msg">メッセージ(~300字)</label>
       <textarea id="msg" maxlength="300" placeholder="例：また一緒に遊ぼう！" required></textarea>
     </div>
     <div class="row">
@@ -364,9 +371,9 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
         <span class="hint" id="img-hint">写真やイラスト1枚まで</span>
       </div>
     </div>
-    <div class="row">
+    <div class="row submit-row">
       <p class="status" id="status"></p>
-      <div style="display:flex; gap:14px; align-items:center">
+      <div class="submit-actions">
         <span class="count" id="charcount">0 / 300</span>
         <button class="fold-btn" id="fold" type="submit">鶴を折る</button>
       </div>
@@ -376,7 +383,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
   <section style="display:grid; gap:12px">
     <div class="hang-head">
       <h2>集まった鶴たち</h2>
-      <p>折り鶴を開くと、中に書かれたメッセージ/画像が見れます</p>
+      <p>鶴をクリックするとひらきます。左右にスワイプで他の糸も見れます。</p>
     </div>
     <p class="demo-note" id="demo-note" hidden>お試し表示です（Firebase の設定がまだ入っていません）。ここに出ている鶴は見本で、折った鶴はこのブラウザの中にだけ残ります。</p>
     <div class="scroll-nav" id="scroll-nav" hidden>
@@ -602,8 +609,10 @@ const firebaseConfig = {
       if (c) {
         el.className = "crane" + (c.n === justFolded ? " new" : "");
         el.dataset.n = c.n;
-        el.innerHTML = craneSVG(colorHex(c.color)) + `<span class="no">${pad(c.n)}</span>` + (c.img || c.hasImg ? '<span class="has-img"></span>' : "");
-        el.setAttribute("aria-label", `No.${pad(c.n)} の鶴をひらく`);
+        const unread = !readSet.has(c.n);
+        el.innerHTML = craneSVG(colorHex(c.color)) + `<span class="no">${pad(c.n)}</span>`
+          + (unread ? '<span class="unread"></span>' : "");
+        el.setAttribute("aria-label", `No.${pad(c.n)} の鶴をひらく` + (unread ? "（まだ読んでいません）" : ""));
         el.onclick = () => openLetter(i);
       } else {
         el.className = "crane ghost"; el.disabled = true; el.tabIndex = -1;
@@ -644,9 +653,23 @@ const firebaseConfig = {
   $("to-first").onclick = () => scroller.scrollTo({ left: 0, behavior: "smooth" });
   $("to-last").onclick = () => scroller.scrollTo({ left: scroller.scrollWidth, behavior: "smooth" });
 
+  // 読んだ鶴の番号は、この端末のブラウザにだけ覚えておく（Firebase は使わないので無料の範囲に影響しない）
+  const READ_KEY = "senbazuru-read";
+  let persistRead = true;
+  const readSet = new Set();
+  try { JSON.parse(localStorage.getItem(READ_KEY) || "[]").forEach(n => typeof n === "number" && readSet.add(n)); } catch {}
+  function markRead(n) {
+    if (readSet.has(n)) return;
+    readSet.add(n);
+    if (persistRead) try { localStorage.setItem(READ_KEY, JSON.stringify([...readSet])); } catch {}
+    const el = $("strands").querySelector(`[data-n="${n}"]`);
+    if (el) { el.querySelector(".unread")?.remove(); el.setAttribute("aria-label", `No.${pad(n)} の鶴をひらく`); }
+  }
+
   function openLetter(i) {
     openIdx = i;
     const c = cranes[i];
+    markRead(c.n);
     const ov = $("overlay");
     ov.hidden = true; void ov.offsetWidth; // アニメーションを毎回やり直す
     ov.querySelector(".fly-crane")?.remove();
@@ -786,6 +809,7 @@ const firebaseConfig = {
     try {
       const saving = db ? foldShared(msg, from, picked, pickedImg) : Promise.resolve(foldLocal(msg, from, picked, pickedImg));
       const [n] = await Promise.all([saving, anim.formed]);
+      markRead(n);   // 自分で折った鶴は読んだことにする
       await anim.fly(`No.${pad(n)} の鶴ができました`);
       if (!db) render();
       const el = $("strands").querySelector(`[data-n="${n}"]`);
@@ -854,6 +878,8 @@ const firebaseConfig = {
   // URL の最後に #demo をつけると、ダミーの鶴100羽で見た目を確かめられる（本物のデータには触れない）
   function startDummy(count) {
     keepLocal = false;
+    persistRead = false;   // ダミーの番号を、本物の既読として残さない
+    readSet.clear();
     $("demo-note").textContent = `ダミー表示です（URL の #demo）。鶴${count}羽は見本で、本物の鶴は表示していません。ここで折った鶴はどこにも保存されません。`;
     $("demo-note").hidden = false;
     let seed = 7;
