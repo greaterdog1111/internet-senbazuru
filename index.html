@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
 <style>
-/* Layout: 上にメッセージを書く紙、下に十羽ずつ糸に吊るされた鶴の束。鶴をクリックすると白い内側が開いて手紙になる */
 :root {
   --bg: #eef0ee;
   --surface: #f9faf8;
@@ -329,7 +328,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 <div class="wrap">
   <header>
     <h1>インターネット千羽鶴</h1>
-    <p class="lede">メッセージを書くと鶴が一羽折れます。折り鶴を開くと、中に書かれたメッセージ/画像が見れます。</p>
+    <p class="lede">メッセージを書くと鶴が一羽折れます。</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
@@ -377,7 +376,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
   <section style="display:grid; gap:12px">
     <div class="hang-head">
       <h2>集まった鶴たち</h2>
-      <p>鶴をクリックするとひらきます。左右にスワイプで他の糸も見れます。</p>
+      <p>折り鶴を開くと、中に書かれたメッセージ/画像が見れます</p>
     </div>
     <p class="demo-note" id="demo-note" hidden>お試し表示です（Firebase の設定がまだ入っていません）。ここに出ている鶴は見本で、折った鶴はこのブラウザの中にだけ残ります。</p>
     <div class="scroll-nav" id="scroll-nav" hidden>
