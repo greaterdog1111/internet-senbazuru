@@ -7,7 +7,7 @@
 <title>インターネット千羽鶴</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
 <style>
 /* Layout: 上にメッセージを書く紙、下に十羽ずつ糸に吊るされた鶴の束。鶴をクリックすると白い内側が開いて手紙になる */
 :root {
@@ -25,11 +25,7 @@
   --paper-ink: #2a2a2a;
   --paper-crease: rgba(0,0,0,.08);
   /* 「一羽折る」の折り紙 */
-  --tint: 16%;
-  --fold-shade: rgba(0,0,0,.035);
-  --fold-light: rgba(255,255,255,.25);
   --paper-back: #fdfcf8;
-  --field: rgba(255,255,255,.75);
   --f-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
   --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
   --f-hand: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -40,11 +36,11 @@
 :root { color-scheme: light; }
 /* ナイトモード：右下のボタンで切り替えたときだけ（端末の設定には合わせない） */
 :root[data-theme="dark"] {
-  --bg: #14171d; --surface: #1d2129; --fg: #e9e7e1; --muted: #9aa0a8;
-  --line: #2e333d; --thread: #7d6f58; --accent: #e0606b; --accent-fg: #1a0e10;
+  /* 青みのない、ニュートラルな黒〜グレー */
+  --bg: #161616; --surface: #202020; --fg: #ececec; --muted: #a3a3a3;
+  --line: #333333; --thread: #7d6f58; --accent: #e0606b; --accent-fg: #1a0e10;
   --scrim: rgba(0,0,0,.6); color-scheme: dark;
-  --tint: 22%; --fold-shade: rgba(0,0,0,.12); --fold-light: rgba(255,255,255,.03);
-  --paper-back: #d9d6cf; --field: rgba(10,12,16,.55);
+  --paper-back: #d9d6cf;
 }
 .theme-toggle {
   position: fixed; z-index: 9;
@@ -104,25 +100,36 @@ h1 { font-family: var(--f-display); font-weight: 900; letter-spacing: .04em; fon
 .bar span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .6s ease; }
 
 /* 書く */
-/* 「一羽折る」は正方形の折り紙。選んだ色がうっすら紙に移り、
-   左下の角は折り返されて白い裏が見える */
+/* 「一羽折る」は選んだ色そのままの正方形の折り紙（ライト／ダークに関係なく同じ色）。
+   文字の色は紙の明るさに合わせて白か黒に切り替える（--ink）。左下の角は折り返されて白い裏が見える */
 .compose {
-  --pc: #c8384a;
+  --pc: #c8384a; --ink: #ffffff; --ink-soft: rgba(255,255,255,.82);
   position: relative; padding: 26px 22px 30px; gap: 16px;
-  background: var(--surface);
-  background:
-    linear-gradient(180deg, var(--fold-shade) 0%, rgba(0,0,0,0) 55%, var(--fold-light) 100%),
-    color-mix(in srgb, var(--pc) var(--tint), var(--surface));
+  color: var(--ink);
+  background-color: var(--pc);
+  background-image: linear-gradient(180deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,0) 45%, rgba(0,0,0,.08) 100%);
   border-radius: 2px;
-  box-shadow: 0 1px 1px rgba(0,0,0,.08), 0 10px 24px -8px rgba(0,0,0,.18);
+  box-shadow: 0 1px 1px rgba(0,0,0,.08), 0 10px 24px -8px rgba(0,0,0,.25);
   transition: background-color .3s;
 }
+.compose h2, .compose .color-name { color: var(--ink); }
+.compose .field label, .compose .field .lbl, .compose .count, .compose .status, .compose .hint { color: var(--ink-soft); }
+/* 入力欄は紙の上に貼った白い紙。どの色の上でも読めるよう、文字は濃い色で固定 */
+.compose input[type=text], .compose textarea {
+  background: rgba(255,255,255,.92); color: #23262b; border-color: rgba(0,0,0,.18); color-scheme: light;
+}
+.compose input::placeholder, .compose textarea::placeholder { color: #8a8d88; }
+.compose .ghost-btn, .compose .img-pick label.ghost-btn { background: rgba(255,255,255,.92); color: #23262b; border-color: rgba(0,0,0,.18); }
+/* 色見本の縁と、選んでいる色の枠は白でそろえる */
+.compose .swatch { box-shadow: 0 0 0 1px rgba(255,255,255,.6); }
+.compose .swatch[aria-checked="true"] { border-color: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+/* 「鶴を折る」は紙の色と重ならないよう、文字色の地に紙の色の文字 */
+.compose .fold-btn { background: var(--ink); color: var(--pc); }
 .compose::after {
   content: ""; position: absolute; left: 0; bottom: 0; width: 30px; height: 30px; pointer-events: none;
   background: linear-gradient(45deg, var(--bg) 50%, var(--paper-back) 50%);
   filter: drop-shadow(2px -2px 2px rgba(0,0,0,.12));
 }
-.compose input[type=text], .compose textarea { background: var(--field); }
 /* 正方形の紙。中身が多い狭い画面では縦に伸びる。余った高さはメッセージ欄が使う */
 .compose {
   width: min(100%, 600px); min-width: 0; justify-self: center; aspect-ratio: 1;
@@ -324,6 +331,313 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition: none !important; }
 }
+
+/* ===================================================================
+   実験版：ネオブルータリズム × Y2K
+   太い黒線とずらした影（ネオブルータリズム）に、ホログラムのグラデ・クロームの文字・
+   きらきら・ドット文字（Y2K）を合わせる。このブロックを消せば元の版の見た目に戻る
+   =================================================================== */
+:root {
+  --f-display: "Dela Gothic One", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  --f-pixel: "DotGothic16", ui-monospace, monospace;
+  --f-num: "DotGothic16", ui-monospace, monospace;
+  --k: #111111;                       /* 線と影の色 */
+  --bg: #efeaff; --surface: #ffffff; --fg: #111111; --muted: #4b4b57; --line: #111111;
+  --accent: #ff4fc8; --accent-fg: #111111; --thread: #111111;
+  --lime: #c8ff3c; --pink: #ff6fd0; --cyan: #53e9ff; --yellow: #fff36b;
+  --grid: rgba(17,17,17,.07);
+  --holo: linear-gradient(115deg, #ffd3f4 0%, #c9f1ff 25%, #e3ffcf 50%, #fff2c2 72%, #e1d4ff 100%);
+}
+:root[data-theme="dark"] {
+  --k: #f2f2f2;
+  --bg: #121212; --surface: #1c1c1c; --fg: #f2f2f2; --muted: #c4c4c4; --line: #f2f2f2;
+  --accent: #ff6fd0; --accent-fg: #111111; --thread: #f2f2f2;
+  --grid: rgba(255,255,255,.06);
+  --holo: linear-gradient(115deg, #4a2147 0%, #163a4a 25%, #2a4220 50%, #4a3c17 72%, #2e2452 100%);
+}
+body {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ヘッダー：ホログラムのカードにクロームの文字 */
+header {
+  position: relative; padding: 26px 24px 28px;
+  background: var(--holo);
+  border: 3px solid var(--k); border-radius: 16px;
+  box-shadow: 8px 8px 0 var(--k);
+}
+header::before, header::after {   /* きらきら */
+  position: absolute; font-family: var(--f-display); color: var(--k); pointer-events: none;
+}
+/* きらきらは枠の線の上に貼ったシールのように置き、タイトルと重ならないようにする */
+header::before { content: "✦"; top: -24px; right: 96px; font-size: 34px; animation: twinkle 2.4s ease-in-out infinite; text-shadow: 2px 2px 0 var(--bg); }
+header::after { content: "✧"; top: -14px; right: 136px; font-size: 20px; animation: twinkle 2.4s -1.2s ease-in-out infinite; }
+@keyframes twinkle { 50% { transform: scale(.6) rotate(20deg); opacity: .5; } }
+/* タイトルは枠の幅いっぱいまで大きく（枠の中の幅 ÷ 10文字＋縁どりの分） */
+h1 {
+  font-family: var(--f-display); font-weight: 400; letter-spacing: 0; width: fit-content; max-width: 100%;
+  font-size: clamp(16px, calc((min(100vw, 1040px) - 40px - 54px - 10px) / 10.4), 110px); line-height: 1.15;
+  position: relative; white-space: nowrap;   /* どの画面幅でも1行 */
+  animation: titleFloat 3s ease-in-out infinite alternate;   /* 並んだまま、ほんの少しだけ上下する */
+}
+/* かわいいタイトル：1文字ずつパステルの色を変え、黒い縁の白抜き風に */
+h1 .ch {
+  position: relative; display: inline-block; isolation: isolate;
+  color: var(--c);
+  -webkit-text-stroke: 3.5px #111; paint-order: stroke fill;
+  text-shadow: 3px 3px 0 #111;
+}
+/* 文字ごとのドット絵の影（ピンクの市松模様のピクセル） */
+h1 .ch::before {
+  content: attr(data-c); content: attr(data-c) / "";
+  position: absolute; left: 0; top: 0; z-index: -1;
+  transform: translate(.15em, .15em);
+  background: conic-gradient(var(--dot) 25%, transparent 0 50%, var(--dot) 0 75%, transparent 0) 0 0 / 6px 6px;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  -webkit-text-stroke: 3px transparent; text-shadow: none;
+}
+:root { --dot: #ff4fc8; }
+:root[data-theme="dark"] { --dot: #ff6fd0; }
+h1 .ch:nth-child(5n+1) { --c: #ffb3e6; }   /* ピンク */
+h1 .ch:nth-child(5n+2) { --c: #fff59a; }   /* レモン */
+h1 .ch:nth-child(5n+3) { --c: #a8ffd6; }   /* ミント */
+h1 .ch:nth-child(5n+4) { --c: #a9ecff; }   /* そら */
+h1 .ch:nth-child(5n+5) { --c: #d9c2ff; }   /* ラベンダー */
+@keyframes titleFloat { from { translate: 0 -1.5px; } to { translate: 0 1.5px; } }
+.lede { color: var(--fg); font-weight: 500; }
+.progress { max-width: none; }
+.progress-label { font-family: var(--f-pixel); color: var(--fg); font-size: 14px; }
+.progress-label b { font-family: var(--f-pixel); font-weight: 400; font-size: 16px; }
+.bar { height: 20px; border-radius: 0; border: 3px solid var(--k); background: var(--surface); }
+.bar span {
+  background: repeating-linear-gradient(-45deg, var(--lime) 0 8px, #9be81a 8px 16px);
+  border-right: 3px solid var(--k); min-width: 6px;
+}
+
+/* ボタン：太い線とずらした影。押すと影の位置まで沈む */
+.ghost-btn, .event-btn, .theme-toggle, .compose .fold-btn, .compose .ghost-btn, .compose .img-pick label.ghost-btn, .img-pick label.ghost-btn {
+  font-family: var(--f-body); font-weight: 900;
+  border: 3px solid var(--k); border-radius: 10px;
+  background: var(--surface); color: var(--fg);
+  box-shadow: 4px 4px 0 var(--k);
+  transition: transform .08s, box-shadow .08s;
+}
+.ghost-btn:hover:not(:disabled), .theme-toggle:hover, .compose .fold-btn:hover, .img-pick label.ghost-btn:hover {
+  transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--k);
+}
+.ghost-btn:active:not(:disabled), .event-btn:active, .theme-toggle:active, .compose .fold-btn:active, .img-pick label.ghost-btn:active {
+  transform: translate(4px, 4px); box-shadow: 0 0 0 var(--k);
+}
+.ghost-btn:disabled { box-shadow: none; }
+.compose .ghost-btn, .compose .img-pick label.ghost-btn { background: var(--lime); color: #111; border-color: #111; box-shadow: 4px 4px 0 #111; }
+.compose .fold-btn {
+  background: var(--pink); color: #111; border-color: #111; box-shadow: 4px 4px 0 #111;
+  font-family: var(--f-display); font-weight: 400; font-size: 17px; padding: 12px 24px;
+}
+.event-btn { background: var(--cyan); color: #111; padding: 12px 22px; font-size: 15px; }
+.event-btn:hover, .event-btn:focus-visible { border-color: var(--k); color: #111; text-shadow: none; background: var(--holo); background-size: 200% 100%; }
+@media (hover: none) { .event-btn { color: #111; text-shadow: none; border-color: var(--k); } }
+.theme-toggle { width: 48px; height: 48px; background: var(--yellow); color: #111; }
+
+/* 一羽折る：選んだ色の紙を、太い枠と影のステッカーに */
+.compose {
+  border: 3px solid #111; border-radius: 0;
+  box-shadow: 10px 10px 0 var(--k);
+  background-image:
+    radial-gradient(rgba(255,255,255,.28) 1.2px, transparent 1.3px);
+  background-size: 14px 14px;
+}
+/* 右上の角を折り返す：紙（と影）の角を本当に切り取って、後ろの方眼や青空がそのまま見えるようにする。
+   影は右下に10pxずれているので、影の切り口も同じ斜めの線の延長にそろえる */
+.compose {
+  clip-path: polygon(0 0, calc(100% - 42px) 0, 100% 42px, calc(100% + 10px) 52px,
+                     calc(100% + 10px) calc(100% + 10px), 10px calc(100% + 10px), 0 100%);
+}
+/* 折れた白い裏（左下の三角）。黒い線で縁どり、右上の半分は透明 */
+.compose::after {
+  display: block; left: auto; bottom: auto; top: -3px; right: -3px; width: 42px; height: 42px;
+  border-left: 3px solid #111; border-bottom: 3px solid #111; filter: none;
+  background: linear-gradient(to top right, #fff calc(50% - 2px), #111 calc(50% - 2px) calc(50% + 1px), transparent calc(50% + 1px));
+  background-origin: border-box;
+}
+.compose h2 { font-family: var(--f-display); font-weight: 400; font-size: 20px; }
+.compose h2::after { content: " ✦"; }
+.compose .field label, .compose .field .lbl { font-family: var(--f-pixel); font-size: 13px; letter-spacing: .04em; }
+.compose input[type=text], .compose textarea {
+  border: 3px solid #111; border-radius: 10px; background: #fff; color: #111;
+}
+.compose input[type=text]:focus-visible, .compose textarea:focus-visible { outline: none; box-shadow: 4px 4px 0 #111; }
+.compose .swatch { border: 2px solid #111; border-radius: 6px; box-shadow: none; }
+.compose .swatch[aria-checked="true"] { border: 3px solid #fff; transform: scale(1.15) rotate(-6deg); box-shadow: 0 0 0 2px #111, 3px 3px 0 2px #111; }
+.compose .count { font-family: var(--f-pixel); }
+
+/* 集まった鶴たち */
+.hang-head h2 { font-family: var(--f-display); font-weight: 400; font-size: 26px; background: linear-gradient(transparent 55%, var(--lime) 55%); color: #111; padding: 0 4px; }
+/* ナイトモードでは白い文字。白が読めるよう、蛍光ペンの色を濃いマゼンタに */
+:root[data-theme="dark"] .hang-head h2 { color: #fff; background: linear-gradient(transparent 55%, #b0128a 55%); }
+.hang-head p { color: var(--fg); }
+.scroller { background: var(--surface); border: 3px solid var(--k); border-radius: 14px; box-shadow: 6px 6px 0 var(--k); padding: 0 8px 12px; }
+.rail { background: var(--k); opacity: 1; height: 6px; border-radius: 0; }
+.strand::before { background: var(--k); opacity: .7; }
+.crane .no { font-family: var(--f-pixel); font-size: 11px; border: 2px solid var(--k); background: var(--surface); color: var(--fg); border-radius: 4px; padding: 1px 3px; }
+.crane .unread { background: var(--pink); border: 2px solid #111; width: 11px; height: 11px; box-shadow: none; }
+.crane:hover { transform: translateY(-4px) rotate(-6deg) scale(1.08); }
+.scroll-nav .where { font-family: var(--f-pixel); color: var(--fg); font-size: 13px; }
+.demo-note { border: 3px solid var(--k); border-left-width: 3px; background: var(--yellow); color: #111; padding: 8px 12px; border-radius: 10px; }
+
+/* 手紙・演出 */
+.letter { border: 3px solid #111; border-radius: 6px; box-shadow: 8px 8px 0 #111; }
+.letter .no-big { font-family: var(--f-pixel); font-size: 14px; color: #111; }
+.letter-actions .ghost-btn { background: var(--surface); }
+.fold-label {
+  font-family: var(--f-display); font-weight: 400; color: #111; text-shadow: none;
+  background: var(--lime); border: 3px solid #111; border-radius: 10px; padding: 10px 20px;
+  box-shadow: 5px 5px 0 #111; transform: rotate(-2deg);
+}
+.event-area { font-family: var(--f-pixel); color: var(--fg); font-size: 14px; }
+.credit { font-family: var(--f-pixel); color: var(--fg); border-top: 3px solid var(--k); font-size: 12px; }
+
+/* 「何かが起きるボタン」が虹色になるとき（パソコンはカーソルを合わせたとき、スマホはいつも）：
+   ゆっくり流れる虹と光の筋、ほんのりした発光、まわりで星がまたたく */
+.event-btn { position: relative; }
+.event-btn::before, .event-btn::after {
+  position: absolute; font-family: var(--f-display); pointer-events: none; opacity: 0; color: var(--k);
+  transition: opacity .15s;
+}
+.event-btn::before { content: "✦"; top: -22px; left: -14px; font-size: 26px; }
+.event-btn::after { content: "✧"; bottom: -20px; right: -12px; font-size: 22px; }
+.event-btn:hover, .event-btn:focus-visible {
+  color: #fff; border-color: #111; -webkit-text-stroke: 0;
+  text-shadow: 2px 2px 0 #111, -1px -1px 0 #111, 1px -1px 0 #111, -1px 1px 0 #111;
+  background:
+    linear-gradient(105deg, transparent 38%, rgba(255,255,255,.85) 48%, transparent 58%) 0 0 / 250% 100% no-repeat,
+    linear-gradient(90deg, #ff004c, #ff8a00, #ffe600, #2bff88, #00d9ff, #7a5cff, #ff00d4, #ff004c) 0 0 / 300% 100%;
+  box-shadow: 4px 4px 0 #111, 0 0 10px rgba(255,0,212,.45), 0 0 22px rgba(0,217,255,.35);
+  animation: partyBg 3.5s linear infinite;
+}
+.event-btn:hover::before, .event-btn:hover::after, .event-btn:focus-visible::before, .event-btn:focus-visible::after {
+  opacity: 1; animation: partyStar 2.4s ease-in-out infinite alternate;
+}
+.event-btn:hover::after, .event-btn:focus-visible::after { animation-delay: -1.2s; }
+@keyframes partyBg { from { background-position: 200% 0, 0 0; } to { background-position: -150% 0, 150% 0; } }
+@keyframes partyStar { from { opacity: .35; } to { opacity: 1; } }
+@media (hover: none) {
+  .event-btn {
+    color: #fff; border-color: #111;
+    text-shadow: 2px 2px 0 #111, -1px -1px 0 #111, 1px -1px 0 #111, -1px 1px 0 #111;
+    background:
+      linear-gradient(105deg, transparent 38%, rgba(255,255,255,.85) 48%, transparent 58%) 0 0 / 250% 100% no-repeat,
+      linear-gradient(90deg, #ff004c, #ff8a00, #ffe600, #2bff88, #00d9ff, #7a5cff, #ff00d4, #ff004c) 0 0 / 300% 100%;
+    box-shadow: 4px 4px 0 #111, 0 0 10px rgba(255,0,212,.45), 0 0 22px rgba(0,217,255,.35);
+    animation: partyBg 3.5s linear infinite;
+  }
+  .event-btn::before, .event-btn::after { opacity: 1; animation: partyStar 2.4s ease-in-out infinite alternate; }
+  .event-btn::after { animation-delay: -1.2s; }
+}
+
+/* 背景のところどころがグリッチで欠けて、ピクセルアートの青空がのぞく。
+   青空は画面に固定した1枚の絵で、欠けた穴の位置ごとに空の別の場所が見える */
+.sky-glitch {
+  position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+:root[data-theme="dark"] .sky-glitch { opacity: .8; }
+.wrap { position: relative; z-index: 1; }
+
+/* 左上の付箋2枚と、右上でくるくる回る鶴。付箋の下の端はタイトル枠の上の線に少し重なって、貼ってあるように見える */
+.topbar {
+  position: relative; z-index: 2; display: flex; justify-content: flex-start; align-items: flex-end; gap: 12px;
+  margin-bottom: -58px; padding: 0 14px; pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
+.spin-crane { width: 58px; height: 46px; perspective: 300px; margin-left: auto; margin-right: 4px; align-self: center; }
+.spin-crane svg { width: 100%; height: 100%; display: block; animation: spinY 2.6s linear infinite, bob 1.3s ease-in-out infinite alternate; filter: drop-shadow(2px 2px 0 var(--k)); }
+@keyframes spinY { to { transform: rotateY(360deg); } }
+@keyframes bob { from { translate: 0 -3px; } to { translate: 0 3px; } }
+.sticky {
+  position: relative; width: 78px; height: 64px; padding: 14px 6px 6px; cursor: pointer;
+  font-family: var(--f-display); font-size: 15px; color: #111; line-height: 1.2;
+  border: 3px solid #111; border-radius: 2px; box-shadow: 4px 4px 0 var(--k);
+  transition: transform .12s, box-shadow .12s;
+}
+.sticky::before {   /* テープ */
+  content: ""; position: absolute; top: -10px; left: 50%; width: 38px; height: 16px; margin-left: -19px;
+  background: rgba(255,255,255,.65); border: 2px solid rgba(17,17,17,.55); transform: rotate(-4deg);
+}
+.sticky-yellow { background: var(--yellow); transform: rotate(-5deg); top: 4px; }
+.sticky-pink { background: var(--pink); transform: rotate(4deg); }
+.sticky:hover { transform: rotate(0deg) translateY(-4px); box-shadow: 6px 6px 0 var(--k); }
+.sticky:active { transform: rotate(0deg) translate(3px, 3px); box-shadow: 1px 1px 0 var(--k); }
+.sticky:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+
+/* 付箋をひらいたときの大きな付箋 */
+.note-modal {
+  position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 20px 16px;
+  background: rgba(17,17,17,.45); animation: fade .15s ease;
+}
+.note-card {
+  position: relative; width: min(100%, 380px); padding: 34px 26px 28px;
+  background: var(--yellow); color: #111;
+  border: 3px solid #111; border-radius: 2px; box-shadow: 10px 10px 0 #111;
+  transform: rotate(-2deg); animation: notePop .25s cubic-bezier(.2,.9,.3,1.3);
+}
+.note-card.pink { background: var(--pink); transform: rotate(2deg); }
+.note-card::before {
+  content: ""; position: absolute; top: -14px; left: 50%; width: 90px; height: 24px; margin-left: -45px;
+  background: rgba(255,255,255,.7); border: 2px solid rgba(17,17,17,.55); transform: rotate(3deg);
+}
+@keyframes notePop { from { transform: scale(.6) rotate(-10deg); opacity: 0; } }
+.note-title { margin: 0 0 14px; font-family: var(--f-display); font-weight: 400; font-size: 24px; }
+.note-body { display: grid; gap: 6px; font-weight: 700; font-size: 16px; line-height: 1.7; }
+.note-body p { margin: 0; }
+.note-body .handle { font-family: var(--f-display); font-size: 22px; overflow-wrap: anywhere; }
+.note-body .where { font-family: var(--f-pixel); font-size: 15px; }
+.note-close {
+  position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; cursor: pointer;
+  font: 400 22px/1 var(--f-display); color: #111; background: #fff;
+  border: 3px solid #111; border-radius: 6px; box-shadow: 3px 3px 0 #111;
+}
+.note-close:active { transform: translate(3px, 3px); box-shadow: none; }
+@media (max-width: 520px) {
+  .topbar { gap: 8px; padding: 0 8px; margin-bottom: -50px; }
+  .sticky { width: 70px; height: 56px; font-size: 12px; white-space: nowrap; padding-inline: 2px; }
+  h1 .ch { -webkit-text-stroke-width: 2.5px; text-shadow: 2px 2px 0 #111; }   /* 小さい文字では縁を細めにしてつぶれないように */
+  h1 .ch::before { background-size: 4px 4px; }
+  .spin-crane { width: 48px; height: 38px; }
+}
+
+/* ページのいちばん下（何かが起きるボタンのあたり）に積もるドット絵の鶴の山。
+   本物の10羽につき1羽ずつ増え、1000羽で100羽ぶんの山になる */
+body { position: relative; }
+.crane-pile {
+  position: absolute; left: 0; bottom: 0; width: 100%; height: 340px; z-index: 0; pointer-events: none;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+.wrap { padding-bottom: 150px; }
+
+/* 「何かが起きるボタン」にカーソルを合わせる・選ぶ・押すと、まわりにマンガの集中線が出る */
+html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出しても横スクロールさせない */
+.event { position: relative; }
+.event .event-btn { z-index: 4; }
+.event::before {
+  content: ""; position: absolute; z-index: 3; pointer-events: none;   /* 鶴の一覧の上にも重ねて、ボタンをぐるりと囲む */
+  left: 50%; top: 26px; width: min(1100px, 100vw); height: 520px; translate: -50% -50%;
+  background:
+    repeating-conic-gradient(from 0deg, var(--k) 0deg .5deg, transparent .5deg 3.1deg),
+    repeating-conic-gradient(from 1.4deg, var(--k) 0deg .9deg, transparent .9deg 7.3deg);
+  /* 真ん中（ボタンのまわり）は空けて、外側に向かって線が濃くなり、端でまた消える */
+  -webkit-mask: radial-gradient(closest-side, transparent 38%, #000 58%, #000 82%, transparent 100%);
+          mask: radial-gradient(closest-side, transparent 38%, #000 58%, #000 82%, transparent 100%);
+  opacity: 0; transition: opacity .12s;
+}
+.event:has(.event-btn:hover)::before, .event:has(.event-btn:focus-visible)::before, .event:has(.event-btn:active)::before {
+  opacity: .8; animation: speedLines .3s steps(1) infinite;
+}
+@keyframes speedLines { 0% { rotate: 0deg; } 33% { rotate: 1.2deg; } 66% { rotate: -.8deg; } }
 </style>
 <script>
   // 前回選んだナイトモードを、表示の前に反映する
@@ -332,20 +646,27 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 </head>
 <body>
 
+<canvas class="sky-glitch" id="sky-glitch" aria-hidden="true"></canvas>
+<canvas class="crane-pile" id="crane-pile" aria-hidden="true"></canvas>
 <div class="wrap">
+  <div class="topbar">
+    <button type="button" class="sticky sticky-yellow" data-note="howto" aria-haspopup="dialog">遊び方</button>
+    <button type="button" class="sticky sticky-pink" data-note="author" aria-haspopup="dialog">作った人</button>
+    <div class="spin-crane" id="spin-crane" aria-hidden="true"></div>
+  </div>
   <header>
-    <h1>インターネット千羽鶴</h1>
+    <h1 aria-label="インターネット千羽鶴"><span aria-hidden="true"><span class="ch" data-c="イ">イ</span><span class="ch" data-c="ン">ン</span><span class="ch" data-c="タ">タ</span><span class="ch" data-c="ー">ー</span><span class="ch" data-c="ネ">ネ</span><span class="ch" data-c="ッ">ッ</span><span class="ch" data-c="ト">ト</span><span class="ch" data-c="千">千</span><span class="ch" data-c="羽">羽</span><span class="ch" data-c="鶴">鶴</span></span></h1>
+    <p class="lede">メッセージを書くと鶴が一羽折れます。千羽集まると何かが…？</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
     </div>
-    <p class="lede">メッセージを書くと鶴が一羽折れます。千羽集まると何かが…？</p>
   </header>
 
   <form class="compose" id="compose" autocomplete="off">
     <h2>一羽折る</h2>
     <div class="field msg-field">
-      <label for="msg">メッセージ(~300字)</label>
+      <label for="msg">メッセージ</label>
       <textarea id="msg" maxlength="300" placeholder="例：また一緒に遊ぼう！" required></textarea>
     </div>
     <div class="row">
@@ -375,7 +696,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
       <p class="status" id="status"></p>
       <div class="submit-actions">
         <span class="count" id="charcount">0 / 300</span>
-        <button class="fold-btn" id="fold" type="submit">鶴を折る</button>
+        <button class="fold-btn" id="fold" type="submit">ツルを折る</button>
       </div>
     </div>
   </form>
@@ -383,7 +704,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
   <section style="display:grid; gap:12px">
     <div class="hang-head">
       <h2>集まった鶴たち</h2>
-      <p>折り鶴を押すと、中に書かれたメッセージ/画像が見れます。</p>
+      <p>鶴をクリックするとひらきます。左右にスワイプで他の糸も見れます。</p>
     </div>
     <p class="demo-note" id="demo-note" hidden>お試し表示です（Firebase の設定がまだ入っていません）。ここに出ている鶴は見本で、折った鶴はこのブラウザの中にだけ残ります。</p>
     <div class="scroll-nav" id="scroll-nav" hidden>
@@ -418,6 +739,23 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
   <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
   <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M1.5 12H4M20 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
 </button>
+
+<div class="note-modal" id="note-modal" hidden>
+  <div class="note-card" id="note-card" role="dialog" aria-modal="true" aria-labelledby="note-title">
+    <button type="button" class="note-close" id="note-close" aria-label="閉じる">×</button>
+    <h3 class="note-title" id="note-title"></h3>
+    <div class="note-body" id="note-body"></div>
+  </div>
+</div>
+<template id="note-howto">
+  <p>メッセージを書くと鶴が折れるよ！</p>
+  <p>みんなで折り鶴を量産しよう！</p>
+  <p>千羽集まると何かが…？</p>
+</template>
+<template id="note-author">
+  <p class="handle">@maxwell_mgmg</p>
+  <p class="where">Discord</p>
+</template>
 
 <div class="fold-stage" id="fold-stage" hidden>
   <div class="fold-box" aria-hidden="true">
@@ -477,6 +815,176 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
     area.textContent = "実装をお待ちください";
     area.hidden = false;
   });
+</script>
+<script>
+  // グリッチの穴からのぞくピクセルアートの青空
+  (() => {
+    const cv = document.getElementById("sky-glitch");
+    const ctx = cv.getContext("2d");
+    const sky = document.createElement("canvas"), sx = sky.getContext("2d");
+    const P = 6;   // 1ドットの大きさ（px）
+    const BANDS = ["#1d58c9", "#2867da", "#3679e8", "#478df1", "#5ca2f7", "#77b7fb", "#95cbfd", "#b6ddff", "#d6edff"];
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let W = 0, H = 0, clouds = [], patches = [], t = 0, seed = 20261009;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+
+    function cloud(x, y, s) {
+      const r = (c, a, b, w, h) => { sx.fillStyle = c; sx.fillRect(x + a * s, y + b * s, w * s, h * s); };
+      r("#ffffff", 0, 3, 15, 3); r("#ffffff", 2, 1, 5, 2); r("#ffffff", 6, 0, 5, 3); r("#ffffff", 10, 2, 4, 1);
+      r("#d9e9f8", 1, 5, 13, 1); r("#c3daf0", 3, 6, 9, 1);
+    }
+    function paintSky() {
+      const bh = Math.ceil(H / BANDS.length);
+      BANDS.forEach((c, i) => {
+        sx.fillStyle = c; sx.fillRect(0, i * bh, W, bh);
+        const next = BANDS[i + 1];
+        if (!next) return;
+        sx.fillStyle = next;   // 色の境目はドット絵らしく市松模様でぼかす
+        for (let x = 0; x < W; x++) sx.fillRect(x, (i + 1) * bh - 2 + (x % 2), 1, 1);
+      });
+      clouds.forEach(c => {
+        const span = W + 40;
+        const x = Math.round((((c.x + t * c.v) % span) + span) % span) - 20;
+        cloud(x, c.y, c.s);
+      });
+    }
+    function makePatch() {
+      const w = ri(Math.round(W * .18), Math.max(20, Math.round(W * .5))), h = ri(Math.round(H * .14), Math.max(14, Math.round(H * .4)));
+      const x = ri(0, Math.max(0, W - w)), y = ri(0, Math.max(0, H - h));
+      const rows = [];
+      for (let yy = 0; yy < h;) {
+        const rh = ri(1, 3);
+        rows.push({ y: y + yy, h: Math.min(rh, h - yy), x0: x + ri(-3, 3), x1: x + w + ri(-3, 3), shift: 0, fringe: rnd() < .25 });
+        yy += rh;
+      }
+      const noise = [];   // 穴のまわりに散らばる欠けたドット
+      for (let k = 0; k < Math.round((w + h) * .6); k++) {
+        const side = ri(0, 3);
+        noise.push(side === 0 ? [x + ri(-2, w + 2), y - ri(1, 3)] : side === 1 ? [x + ri(-2, w + 2), y + h + ri(0, 2)]
+                 : side === 2 ? [x - ri(4, 6), y + ri(0, h)] : [x + w + ri(4, 6), y + ri(0, h)]);
+      }
+      return { rows, noise };
+    }
+    function setup() {
+      W = Math.ceil(innerWidth / P); H = Math.ceil(innerHeight / P);
+      cv.width = sky.width = W; cv.height = sky.height = H;
+      clouds = Array.from({ length: Math.max(6, Math.round(W / 14)) }, () => ({ x: ri(0, W), y: ri(1, Math.round(H * .7)), s: ri(1, 2), v: .4 + rnd() * .8 }));
+      patches = Array.from({ length: W > 150 ? 11 : 8 }, makePatch);
+      draw();
+    }
+    function draw() {
+      paintSky();
+      ctx.clearRect(0, 0, W, H);
+      patches.forEach(p => {
+        p.rows.forEach(r => {
+          const w = r.x1 - r.x0;
+          if (w <= 0) return;
+          ctx.drawImage(sky, r.x0 + r.shift, r.y, w, r.h, r.x0, r.y, w, r.h);
+          if (r.fringe) {   // ずれた色（マゼンタと水色）のふち
+            ctx.fillStyle = "#ff3df0"; ctx.fillRect(r.x0 - 1, r.y, 1, r.h);
+            ctx.fillStyle = "#33f0ff"; ctx.fillRect(r.x1, r.y, 1, r.h);
+          }
+        });
+        p.noise.forEach(([nx, ny]) => ctx.drawImage(sky, nx, ny, 1, 1, nx, ny, 1, 1));
+      });
+    }
+    function tick() {
+      if (document.hidden) return;
+      t += .12;
+      patches.forEach(p => p.rows.forEach(r => { r.shift = 0; }));
+      if (rnd() < .35) {   // ときどき横にずれる（グリッチ）
+        const p = patches[ri(0, patches.length - 1)];
+        const from = ri(0, p.rows.length - 1);
+        for (let k = from; k < Math.min(p.rows.length, from + ri(1, 4)); k++) p.rows[k].shift = ri(-5, 5);
+      }
+      if (rnd() < .012) patches[ri(0, patches.length - 1)] = makePatch();   // 穴がたまに場所を変える
+      draw();
+    }
+    setup();
+    addEventListener("resize", () => { clearTimeout(setup.timer); setup.timer = setTimeout(setup, 150); });
+    if (!reduce) setInterval(tick, 120);
+  })();
+</script>
+<script>
+  // 付箋：押すと中身をひらく。× か外側を押すと閉じる（Esc キーでも）
+  (() => {
+    const modal = document.getElementById("note-modal"), card = document.getElementById("note-card");
+    const titles = { howto: "遊び方", author: "作った人" };
+    let opener = null;
+    const close = () => { modal.hidden = true; document.body.style.overflow = ""; opener?.focus(); };
+    document.querySelectorAll(".sticky").forEach(btn => btn.addEventListener("click", () => {
+      const key = btn.dataset.note;
+      opener = btn;
+      document.getElementById("note-title").textContent = titles[key];
+      const body = document.getElementById("note-body");
+      body.replaceChildren(document.getElementById("note-" + key).content.cloneNode(true));
+      card.classList.toggle("pink", key === "author");
+      modal.hidden = false; document.body.style.overflow = "hidden";
+      document.getElementById("note-close").focus();
+    }));
+    document.getElementById("note-close").addEventListener("click", close);
+    modal.addEventListener("click", e => { if (e.target === modal) close(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
+  })();
+</script>
+<script>
+  // ページ下の鶴の山。羽数が変わったときと画面の大きさが変わったときだけ描き直すので軽い
+  (() => {
+    const cv = document.getElementById("crane-pile"), ctx = cv.getContext("2d");
+    const P = 3;                  // 1ドットの大きさ（px）
+    const SW = 20, SH = 16;       // 鶴1羽の大きさ（ドット）
+    const COLORS = ["#c8384a","#e05a35","#f08a7a","#e8a0b4","#d9649a","#e3a234","#e9d24a","#a2c048","#4f9a6c","#7fb5a6",
+                    "#79b4dc","#2f5d9e","#22386a","#a08cc8","#6b3f8a","#8b5a3c","#3a3a3e","#f4f2ec","#c9a64a","#b4b9c0"];
+    // ページの鶴と同じ形（座標は 100×78 の中）。[点の並び, 重ねるかげ]
+    const SHAPE = [
+      ["54,46 69,4 66,48", "rgba(0,0,0,.28)"], ["62,50 83,11 86,13 68,52", "rgba(0,0,0,.1)"],
+      ["58,47 66,38 71,43 69,53 61,51", "rgba(0,0,0,.1)"], ["35,52 19,19 23,19 42,50", null],
+      ["19,19 23,19 8,27", "rgba(0,0,0,.15)"], ["35,52 50,43 67,50 52,75", null],
+      ["50,43 67,50 52,75", "rgba(0,0,0,.14)"], ["42,48 60,1 61,46", "rgba(255,255,255,.14)"],
+    ].map(([pts, shade]) => [pts.split(" ").map(p => p.split(",").map(Number)), shade]);
+    const sprites = new Map();
+    function sprite(hex) {   // 色ごとに1回だけ作って使い回す。ふちのぼけを消してドット絵にする
+      if (sprites.has(hex)) return sprites.get(hex);
+      const c = document.createElement("canvas"); c.width = SW; c.height = SH;
+      const x = c.getContext("2d");
+      x.scale(SW / 100, SH / 78);
+      SHAPE.forEach(([pts, shade]) => {
+        x.beginPath(); pts.forEach(([a, b], k) => k ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath();
+        x.fillStyle = hex; x.fill();
+        if (shade) { x.fillStyle = shade; x.fill(); }
+      });
+      const img = x.getImageData(0, 0, SW, SH);
+      for (let k = 3; k < img.data.length; k += 4) img.data[k] = img.data[k] >= 110 ? 255 : 0;
+      x.putImageData(img, 0, 0);
+      sprites.set(hex, c);
+      return c;
+    }
+    let total = 0;
+    function draw() {
+      const W = Math.ceil(cv.clientWidth / P), H = Math.ceil(cv.clientHeight / P);
+      cv.width = W; cv.height = H;
+      const n = Math.min(100, Math.ceil(total / 10));   // 本物の10羽で1羽。1000羽で100羽
+      if (!n) return;
+      // 1段に並ぶ数から山の高さを決める（横に重なりながら積むので、段の高さは鶴の半分くらい）
+      const perRow = Math.max(3, Math.floor(W / (SW * .8)));
+      const fillH = Math.min(H, Math.round(SH + Math.ceil(n / perRow) * SH * .55));
+      let seed = 4242;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const list = Array.from({ length: n }, () => ({
+        x: Math.round(rnd() * (W + SW * .5)) - SW * .5,
+        y: Math.round(H - SH - Math.pow(rnd(), 1.4) * (fillH - SH)),
+        hex: COLORS[Math.floor(rnd() * COLORS.length)], flip: rnd() < .5,
+      })).sort((a, b) => a.y - b.y);   // 上にいる鶴から描いて、手前（下）の鶴を重ねる
+      list.forEach(c => {
+        const img = sprite(c.hex);
+        if (c.flip) { ctx.save(); ctx.scale(-1, 1); ctx.drawImage(img, -c.x - SW, c.y); ctx.restore(); }
+        else ctx.drawImage(img, c.x, c.y);
+      });
+    }
+    addEventListener("cranecount", e => { if (e.detail !== total) { total = e.detail; draw(); } });
+    addEventListener("resize", () => { clearTimeout(draw.timer); draw.timer = setTimeout(draw, 150); });
+  })();
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -540,6 +1048,8 @@ const firebaseConfig = {
       <polygon points="54,46 69,4 66,48" fill="#000" opacity=".28"/>
       <polygon points="62,50 83,11 86,13 68,52" fill="${hex}"/>
       <polygon points="62,50 83,11 86,13 68,52" fill="#000" opacity=".1"/>
+      <polygon points="58,47 66,38 71,43 69,53 61,51" fill="${hex}"/>
+      <polygon points="58,47 66,38 71,43 69,53 61,51" fill="#000" opacity=".1"/>
       <polygon points="35,52 19,19 23,19 42,50" fill="${hex}"/>
       <polygon points="19,19 23,19 8,27" fill="${hex}"/>
       <polygon points="19,19 23,19 8,27" fill="#000" opacity=".15"/>
@@ -553,9 +1063,19 @@ const firebaseConfig = {
   const pad = n => String(n).padStart(4, "0");
 
   // 色えらび：基本色＋「自分で選ぶ」
+  function luminance(hex) {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map(c => c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4);
+    return .2126 * r + .7152 * g + .0722 * b;
+  }
   function select(el, value, name) {
     picked = value;
-    $("compose").style.setProperty("--pc", colorHex(value));
+    const hex = colorHex(value);
+    const light = luminance(hex) > 0.22;   // 白と黒のうち、紙の色との差が大きいほうを文字に使う
+    const st = $("compose").style;
+    st.setProperty("--pc", hex);
+    st.setProperty("--ink", light ? "#23262b" : "#ffffff");
+    st.setProperty("--ink-soft", light ? "rgba(35,38,43,.75)" : "rgba(255,255,255,.82)");
     $("color-name").textContent = name;
     document.querySelectorAll(".swatch").forEach(s => s.setAttribute("aria-checked", s === el));
   }
@@ -589,6 +1109,7 @@ const firebaseConfig = {
     $("n-count").textContent = total;
     $("n-left").textContent = Math.max(0, GOAL - total);
     $("bar").style.width = Math.min(100, total / GOAL * 100) + "%";
+    dispatchEvent(new CustomEvent("cranecount", { detail: total }));   // 画面下の鶴の山に羽数を知らせる
     $("empty").hidden = total > 0;
 
     const box = $("strands");
@@ -893,6 +1414,9 @@ const firebaseConfig = {
     render();
   }
   window.addEventListener("hashchange", () => location.reload());
+
+  // 右上でくるくる回る鶴（色はひらくたびに変わる）
+  $("spin-crane").innerHTML = craneSVG(COLORS[Math.floor(Math.random() * COLORS.length)].hex);
 
   // 起動
   render();
