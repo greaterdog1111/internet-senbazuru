@@ -114,7 +114,7 @@ h1 { font-family: var(--f-display); font-weight: 900; letter-spacing: .04em; fon
 /* 「一羽折る」は選んだ色そのままの正方形の折り紙（ライト／ダークに関係なく同じ色）。
    文字の色は紙の明るさに合わせて白か黒に切り替える（--ink）。左下の角は折り返されて白い裏が見える */
 .compose {
-  --pc: #c8384a; --ink: #ffffff; --ink-soft: rgba(255,255,255,.82);
+  --pc: #b4b9c0; --ink: #23262b; --ink-soft: rgba(35,38,43,.75);   /* 最初は「白」の紙 */
   position: relative; padding: 26px 22px 30px; gap: 16px;
   color: var(--ink);
   background-color: var(--pc);
@@ -731,7 +731,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
       </div>
     </div>
     <div class="field">
-      <span class="lbl" id="color-lbl">折り紙の色 <span class="color-name" id="color-name">紅</span></span>
+      <span class="lbl" id="color-lbl">折り紙の色 <span class="color-name" id="color-name">白</span></span>
       <div class="swatches" id="swatches" role="radiogroup" aria-labelledby="color-lbl">
       </div>
     </div>
@@ -1094,7 +1094,7 @@ const firebaseConfig = {
   let cranes = [];       // {n, msg, from, color}
   let loaded = false;   // 鶴の読み込みが終わったか
   let db = null;         // Firestore。設定前（お試し）は null
-  let picked = COLORS[0].id;
+  let picked = "gin";   // 最初に選ばれている色は「白」（中身は銀の色）
   let openIdx = -1;
   let justFolded = null;
 
@@ -1156,6 +1156,7 @@ const firebaseConfig = {
   };
   cc.addEventListener("input", useCustom);
   cc.addEventListener("click", () => { if (custom.classList.contains("set")) useCustom(); });
+  select($("swatches").firstElementChild, picked, "白");   // 最初の色を反映（紙の色と文字の色）
 
   $("msg").addEventListener("input", () => {
     $("charcount").textContent = `${$("msg").value.length} / 300`;
