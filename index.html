@@ -1161,6 +1161,8 @@ const firebaseConfig = {
     </svg>`;
   }
   const pad = n => String(n).padStart(4, "0");
+  // 画面に出す番号は、保存された番号ではなく「何羽目か」。途中の鶴が消されて欠番ができても、1, 2, 3…と続けて見せる
+  const dispNo = n => { const k = cranes.findIndex(c => c.n === n); return k >= 0 ? k + 1 : cranes.length + 1; };
 
   // 色えらび：基本色＋「自分で選ぶ」
   function luminance(hex) {
@@ -1235,9 +1237,9 @@ const firebaseConfig = {
         el.className = "crane" + (c.n === justFolded ? " new" : "");
         el.dataset.n = c.n;
         const unread = !readSet.has(c.n);
-        el.innerHTML = craneSVG(colorHex(c.color)) + `<span class="no">${pad(c.n)}</span>`
+        el.innerHTML = craneSVG(colorHex(c.color)) + `<span class="no">${pad(i + 1)}</span>`
           + (unread ? '<span class="unread"></span>' : "");
-        el.setAttribute("aria-label", `No.${pad(c.n)} の鶴をひらく` + (unread ? "（まだ読んでいません）" : ""));
+        el.setAttribute("aria-label", `No.${pad(i + 1)} の鶴をひらく` + (unread ? "（まだ読んでいません）" : ""));
         el.onclick = () => openLetter(i);
       } else {
         el.className = "crane ghost"; el.disabled = true; el.tabIndex = -1;
@@ -1288,7 +1290,7 @@ const firebaseConfig = {
     readSet.add(n);
     if (persistRead) try { localStorage.setItem(READ_KEY, JSON.stringify([...readSet])); } catch {}
     const el = $("strands").querySelector(`[data-n="${n}"]`);
-    if (el) { el.querySelector(".unread")?.remove(); el.setAttribute("aria-label", `No.${pad(n)} の鶴をひらく`); }
+    if (el) { el.querySelector(".unread")?.remove(); el.setAttribute("aria-label", `No.${pad(dispNo(n))} の鶴をひらく`); }
   }
 
   function openLetter(i) {
@@ -1302,7 +1304,7 @@ const firebaseConfig = {
     fly.className = "fly-crane"; fly.innerHTML = craneSVG(colorHex(c.color));
     ov.querySelector(".letter-wrap").prepend(fly);
     $("letter").style.setProperty("--c", colorHex(c.color));
-    $("letter-no").textContent = `No.${pad(c.n)}`;
+    $("letter-no").textContent = `No.${pad(i + 1)}`;
     $("letter-msg").textContent = c.msg;
     showPhoto(null);
     if (c.img) showPhoto(c.img, c.n);   // 以前の形（鶴と一緒に保存した画像）とお試し表示
@@ -1327,7 +1329,7 @@ const firebaseConfig = {
     $("img-loading").hidden = true;
     $("img-loading").textContent = "画像を読み込んでいます…";
     if (typeof src === "string" && src.startsWith("data:image/")) {
-      li.src = src; li.alt = `No.${pad(n)} に添えられた画像`; li.hidden = false;
+      li.src = src; li.alt = `No.${pad(dispNo(n))} に添えられた画像`; li.hidden = false;
     } else { li.removeAttribute("src"); li.hidden = true; }
   }
   // 画像は鶴をひらいたときに1枚だけ読み込む（一度読んだものは覚えておく）
@@ -1435,12 +1437,12 @@ const firebaseConfig = {
       const saving = db ? foldShared(msg, from, picked, pickedImg) : Promise.resolve(foldLocal(msg, from, picked, pickedImg));
       const [n] = await Promise.all([saving, anim.formed]);
       markRead(n);   // 自分で折った鶴は読んだことにする
-      await anim.fly(`No.${pad(n)} の鶴ができました`);
+      await anim.fly(`No.${pad(dispNo(n))} の鶴ができました`);
       if (!db) render();
       const el = $("strands").querySelector(`[data-n="${n}"]`);
       if (el) { el.classList.remove("new"); void el.offsetWidth; el.classList.add("new"); showCrane(n); }
       $("msg").value = ""; $("charcount").textContent = "0 / 300"; clearImg();
-      $("status").textContent = `No.${pad(n)} の鶴を折りました。ありがとう！`;
+      $("status").textContent = `No.${pad(dispNo(n))} の鶴を折りました。ありがとう！`;
     } catch (err) {
       console.error(err);
       anim.cancel();
