@@ -559,7 +559,6 @@ h1 .ch:nth-child(5n+5) { --c: #a770ff; }   /* パープル */
   position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none;
   image-rendering: pixelated; image-rendering: crisp-edges;
 }
-:root[data-theme="dark"] .sky-glitch { opacity: .8; }
 .wrap { position: relative; z-index: 1; }
 
 /* 左上の付箋2枚と、右上でくるくる回る鶴。付箋の下の端はタイトル枠の上の線に少し重なって、貼ってあるように見える */
@@ -810,7 +809,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
 </template>
 <template id="note-author">
   <p class="handle">@maxwell_mgmg</p>
-  <p class="where">遊びで作りました。連絡は上記Discordアカウントまでお願いします！</p>
+  <p class="where">Discord</p>
 </template>
 
 <div class="fold-stage" id="fold-stage" hidden>
@@ -880,29 +879,50 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
     const sky = document.createElement("canvas"), sx = sky.getContext("2d");
     const P = 6;   // 1ドットの大きさ（px）
     const BANDS = ["#1d58c9", "#2867da", "#3679e8", "#478df1", "#5ca2f7", "#77b7fb", "#95cbfd", "#b6ddff", "#d6edff"];
+    // ナイトモードの夜空：上は深い紺、下へいくほど少し明るい青むらさき
+    const NIGHT = ["#050816", "#080d22", "#0c132e", "#11193b", "#172048", "#1e2855", "#263061", "#2f386c", "#3a4277"];
+    const isNight = () => document.documentElement.dataset.theme === "dark";
+    let stars = [];
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let W = 0, H = 0, clouds = [], patches = [], t = 0, seed = 20261009;
     const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
 
-    function cloud(x, y, s) {
+    function cloud(x, y, s, night) {
       const r = (c, a, b, w, h) => { sx.fillStyle = c; sx.fillRect(x + a * s, y + b * s, w * s, h * s); };
-      r("#ffffff", 0, 3, 15, 3); r("#ffffff", 2, 1, 5, 2); r("#ffffff", 6, 0, 5, 3); r("#ffffff", 10, 2, 4, 1);
-      r("#d9e9f8", 1, 5, 13, 1); r("#c3daf0", 3, 6, 9, 1);
+      const [top, mid, low] = night ? ["#3a4470", "#2e365c", "#262d4e"] : ["#ffffff", "#d9e9f8", "#c3daf0"];   // 夜はうす暗い雲
+      r(top, 0, 3, 15, 3); r(top, 2, 1, 5, 2); r(top, 6, 0, 5, 3); r(top, 10, 2, 4, 1);
+      r(mid, 1, 5, 13, 1); r(low, 3, 6, 9, 1);
+    }
+    function moon(cx, cy, r) {   // ドット絵の三日月
+      for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
+        const inMoon = x * x + y * y <= r * r, inShade = (x - r * .55) ** 2 + (y + r * .2) ** 2 <= (r * .85) ** 2;
+        if (inMoon && !inShade) { sx.fillStyle = x * x + y * y > (r - 1.2) ** 2 ? "#ffe9a3" : "#fff6cf"; sx.fillRect(cx + x, cy + y, 1, 1); }
+      }
     }
     function paintSky() {
-      const bh = Math.ceil(H / BANDS.length);
-      BANDS.forEach((c, i) => {
+      const night = isNight(), bands = night ? NIGHT : BANDS;
+      const bh = Math.ceil(H / bands.length);
+      bands.forEach((c, i) => {
         sx.fillStyle = c; sx.fillRect(0, i * bh, W, bh);
-        const next = BANDS[i + 1];
+        const next = bands[i + 1];
         if (!next) return;
         sx.fillStyle = next;   // 色の境目はドット絵らしく市松模様でぼかす
         for (let x = 0; x < W; x++) sx.fillRect(x, (i + 1) * bh - 2 + (x % 2), 1, 1);
       });
+      if (night) {   // 星はゆっくりまたたく。大きい星は十字に光る
+        stars.forEach(st => {
+          const on = !st.tw || Math.sin(t * st.sp + st.ph) > -.5;   // またたくのは一部の星だけ
+          if (!on) return;
+          sx.fillStyle = st.c; sx.fillRect(st.x, st.y, 1, 1);
+          if (st.big) { sx.fillStyle = "rgba(200,208,235,.3)"; sx.fillRect(st.x - 1, st.y, 3, 1); sx.fillRect(st.x, st.y - 1, 1, 3); sx.fillStyle = st.c; sx.fillRect(st.x, st.y, 1, 1); }
+        });
+        moon(Math.round(W * .78), Math.round(H * .16), Math.max(5, Math.round(Math.min(W, H) * .045)));
+      }
       clouds.forEach(c => {
         const span = W + 40;
         const x = Math.round((((c.x + t * c.v) % span) + span) % span) - 20;
-        cloud(x, c.y, c.s);
+        cloud(x, c.y, c.s, night);
       });
     }
     function makePatch() {
@@ -927,17 +947,24 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
       cv.width = sky.width = W; cv.height = sky.height = H;
       clouds = Array.from({ length: Math.max(6, Math.round(W / 14)) }, () => ({ x: ri(0, W), y: ri(1, Math.round(H * .7)), s: ri(1, 2), v: .4 + rnd() * .8 }));
       patches = Array.from({ length: W > 150 ? 11 : 8 }, makePatch);
+      stars = Array.from({ length: Math.round(W * H / 320) }, () => ({   // 星の数（まばらに）
+        x: ri(0, W - 1), y: ri(0, H - 1), big: rnd() < .06, sp: .3 + rnd() * .7, ph: rnd() * 6.3, tw: rnd() < .3,
+        c: rnd() < .8 ? "#a9b1cf" : ["#c9c3a0", "#9fb2d4"][ri(0, 1)],   // 明るさを落とした星。色つきは少しだけ
+      }));
       draw();
     }
     function draw() {
       paintSky();
       ctx.clearRect(0, 0, W, H);
-      patches.forEach(p => {
-        p.rows.forEach(r => {
+      const night = isNight();
+      // 夜は穴を3つに1つ減らし、色のずれたふち（マゼンタと水色）は出さない。暗い背景の中で色が出すぎないように
+      patches.forEach((p, pi) => {
+        if (night && pi % 3 === 2) return;
+        p.rows.forEach((r, ri) => {
           const w = r.x1 - r.x0;
           if (w <= 0) return;
           ctx.drawImage(sky, r.x0 + r.shift, r.y, w, r.h, r.x0, r.y, w, r.h);
-          if (r.fringe) {   // ずれた色（マゼンタと水色）のふち
+          if (r.fringe && !night) {   // ずれた色（マゼンタと水色）のふち
             ctx.fillStyle = "#ff3df0"; ctx.fillRect(r.x0 - 1, r.y, 1, r.h);
             ctx.fillStyle = "#33f0ff"; ctx.fillRect(r.x1, r.y, 1, r.h);
           }
@@ -949,7 +976,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
       if (document.hidden) return;
       t += .12;
       patches.forEach(p => p.rows.forEach(r => { r.shift = 0; }));
-      if (rnd() < .35) {   // ときどき横にずれる（グリッチ）
+      if (rnd() < (isNight() ? .12 : .35)) {   // ときどき横にずれる（グリッチ）。夜は控えめに
         const p = patches[ri(0, patches.length - 1)];
         const from = ri(0, p.rows.length - 1);
         for (let k = from; k < Math.min(p.rows.length, from + ri(1, 4)); k++) p.rows[k].shift = ri(-5, 5);
@@ -959,6 +986,8 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
     }
     setup();
     addEventListener("resize", () => { clearTimeout(setup.timer); setup.timer = setTimeout(setup, 150); });
+    // ライト／ナイトを切り替えたら、すぐ青空⇔夜空を描き直す
+    new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     if (!reduce) setInterval(tick, 120);
   })();
 </script>
