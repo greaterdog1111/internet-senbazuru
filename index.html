@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="インターネット千羽鶴">
 <meta property="og:title" content="インターネット千羽鶴">
-<meta property="og:description" content="メッセージを書くと鶴が一羽折れます。千羽集まると何かが…？">
+<meta property="og:description" content="メッセージを書くと鶴が一羽折れます。百羽集まると何かが…？">
 <meta property="og:url" content="https://greaterdog1111.github.io/internet-senbazuru/">
 <meta property="og:image" content="https://greaterdog1111.github.io/internet-senbazuru/ogp.png">
 <meta property="og:image:width" content="1200">
@@ -634,7 +634,7 @@ h1 .ch:nth-child(5n+5) { --c: #a770ff; }   /* パープル */
 }
 
 /* ページのいちばん下（何かが起きるボタンのあたり）に積もるドット絵の鶴の山。
-   本物の10羽につき1羽ずつ増え、1000羽で100羽ぶんの山になる */
+   本物の鶴1羽につき1羽ずつ増え、目標の100羽で山がいっぱいになる */
 body { position: relative; }
 .crane-pile {
   position: absolute; left: 0; bottom: 0; width: 100%; height: 340px; z-index: 0; pointer-events: none;
@@ -704,6 +704,38 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
 /* 「一羽折る」の紙の色に白を少し混ぜて明るく見せる（ナイトモードは暗い画面に合わせてもう少し多め） */
 .compose { background-color: color-mix(in srgb, var(--pc) 88%, #fff); }
 :root[data-theme="dark"] .compose { background-color: color-mix(in srgb, var(--pc) 82%, #fff); }
+
+/* 「光らせる」オプション：チェックすると、その鶴は金色に光って目立つ */
+.glow-opt {
+  display: inline-flex; align-items: center; gap: 10px; width: fit-content; cursor: pointer;
+  font-family: var(--f-display); font-size: 15px; color: var(--ink);
+}
+.glow-opt small { font-family: var(--f-body); font-weight: 700; font-size: 12px; color: var(--ink-soft); margin-left: 4px; }
+.glow-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.glow-box {
+  display: grid; place-items: center; width: 30px; height: 30px; flex: none;
+  border: 3px solid var(--line-k); border-radius: 8px; background: var(--white); color: transparent;
+  box-shadow: 3px 3px 0 var(--line-k); font-size: 16px; transition: background .15s, color .15s, transform .1s;
+}
+.glow-opt input:checked + .glow-box {
+  color: #fff; background: linear-gradient(135deg, #fff59a, #ffc400 55%, #ff9f1c);
+  text-shadow: 0 0 4px #fff, 0 0 2px #b36b00; box-shadow: 3px 3px 0 var(--line-k), 0 0 12px rgba(255,200,0,.9);
+}
+.glow-opt input:focus-visible + .glow-box { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.glow-opt:active .glow-box { transform: translate(2px, 2px); }
+/* 光る鶴（一覧） */
+.crane.glow svg { filter: drop-shadow(0 0 3px #fff7b0) drop-shadow(0 0 9px #ffcc00); animation: glowPulse 1.8s ease-in-out infinite alternate; }
+.crane.glow::after {
+  content: "✦"; position: absolute; top: -6px; left: 2px; font-size: 17px; line-height: 1; color: #ffd400;
+  text-shadow: 0 0 6px #fff59a; pointer-events: none; animation: glowStar 1.8s ease-in-out infinite alternate;
+}
+@keyframes glowPulse {
+  from { filter: drop-shadow(0 0 3px #fff7b0) drop-shadow(0 0 10px rgba(255,204,0,.85)); }
+  to   { filter: drop-shadow(0 0 6px #fffbd0) drop-shadow(0 0 20px #ffcc00) drop-shadow(0 0 4px #fff); }
+}
+@keyframes glowStar { from { opacity: .5; transform: scale(.8); } to { opacity: 1; transform: scale(1.15); } }
+/* 光る鶴をひらいたときの手紙 */
+.letter.glow { box-shadow: 8px 8px 0 var(--line-k), 0 0 0 4px #ffd400, 0 0 40px 8px rgba(255,212,0,.55); }
 </style>
 <script>
   // 前回選んだナイトモードを、表示の前に反映する
@@ -726,9 +758,9 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
       <!-- ▼ 千羽鶴を贈る相手の名前。「○○」を書きかえる -->
       <p class="to-tag">to そらと</p>
     </div>
-    <p class="lede">メッセージを書くと鶴が一羽折れます。千羽集まると何かが…？</p>
+    <p class="lede">メッセージを書くと鶴が一羽折れます。百羽集まると何かが…？</p>
     <div class="progress" aria-live="polite">
-      <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
+      <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">100</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
     </div>
   </header>
@@ -745,6 +777,11 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
         <input type="text" id="from" maxlength="30" placeholder="匿名">
       </div>
     </div>
+    <label class="glow-opt" for="glow">
+      <input type="checkbox" id="glow">
+      <span class="glow-box" aria-hidden="true">✦</span>
+      <span>光らせる<small>（強調したいメッセージに）</small></span>
+    </label>
     <div class="field">
       <span class="lbl" id="color-lbl">折り紙の色 <span class="color-name" id="color-name">白</span></span>
       <div class="swatches" id="swatches" role="radiogroup" aria-labelledby="color-lbl">
@@ -821,7 +858,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
 <template id="note-howto">
   <p>メッセージを書くと鶴が折れるよ！</p>
   <p>みんなで折り鶴を量産しよう！</p>
-  <p>千羽集まると何かが…？</p>
+  <p>百羽集まると何かが…？</p>
 </template>
 <template id="note-author">
   <p class="handle">@maxwell_mgmg</p>
@@ -1065,7 +1102,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
     function draw() {
       const W = Math.ceil(cv.clientWidth / P), H = Math.ceil(cv.clientHeight / P);
       cv.width = W; cv.height = H;
-      const n = Math.min(100, Math.ceil(total / 10));   // 本物の10羽で1羽。1000羽で100羽
+      const n = Math.min(100, total);   // 本物の鶴1羽で1羽。目標の100羽でいっぱい
       if (!n) return;
       // 1段に並ぶ数から山の高さを決める（横に重なりながら積むので、段の高さは鶴の半分くらい）
       const perRow = Math.max(3, Math.floor(W / (SW * .8)));
@@ -1106,7 +1143,7 @@ const firebaseConfig = {
 // ▲ ここまで
 
 (() => {
-  const GOAL = 1000, PER_STRAND = 10;
+  const GOAL = 100, PER_STRAND = 10;   // 目標は百羽
   const COLORS = [
     { id: "beni", name: "紅", hex: "#c8384a" },
     { id: "shu", name: "朱", hex: "#e05a35" },
@@ -1234,7 +1271,7 @@ const firebaseConfig = {
       const el = document.createElement("button");
       el.type = "button";
       if (c) {
-        el.className = "crane" + (c.n === justFolded ? " new" : "");
+        el.className = "crane" + (c.n === justFolded ? " new" : "") + (c.glow === true ? " glow" : "");
         el.dataset.n = c.n;
         const unread = !readSet.has(c.n);
         el.innerHTML = craneSVG(colorHex(c.color)) + `<span class="no">${pad(i + 1)}</span>`
@@ -1304,6 +1341,7 @@ const firebaseConfig = {
     fly.className = "fly-crane"; fly.innerHTML = craneSVG(colorHex(c.color));
     ov.querySelector(".letter-wrap").prepend(fly);
     $("letter").style.setProperty("--c", colorHex(c.color));
+    $("letter").classList.toggle("glow", c.glow === true);
     $("letter-no").textContent = `No.${pad(i + 1)}`;
     $("letter-msg").textContent = c.msg;
     showPhoto(null);
@@ -1434,14 +1472,15 @@ const firebaseConfig = {
     $("status").textContent = "折っています…";
     const anim = playFold(colorHex(picked));
     try {
-      const saving = db ? foldShared(msg, from, picked, pickedImg) : Promise.resolve(foldLocal(msg, from, picked, pickedImg));
+      const glow = $("glow").checked;
+      const saving = db ? foldShared(msg, from, picked, pickedImg, glow) : Promise.resolve(foldLocal(msg, from, picked, pickedImg, glow));
       const [n] = await Promise.all([saving, anim.formed]);
       markRead(n);   // 自分で折った鶴は読んだことにする
       await anim.fly(`No.${pad(dispNo(n))} の鶴ができました`);
       if (!db) render();
       const el = $("strands").querySelector(`[data-n="${n}"]`);
       if (el) { el.classList.remove("new"); void el.offsetWidth; el.classList.add("new"); showCrane(n); }
-      $("msg").value = ""; $("charcount").textContent = "0 / 300"; clearImg();
+      $("msg").value = ""; $("charcount").textContent = "0 / 300"; clearImg(); $("glow").checked = false;
       $("status").textContent = `No.${pad(dispNo(n))} の鶴を折りました。ありがとう！`;
     } catch (err) {
       console.error(err);
@@ -1460,12 +1499,13 @@ const firebaseConfig = {
   //   images/{番号}        … 画像。その鶴をひらいたときだけ読む
   // 番号は counter を1増やして決める。同時に誰かが折った場合は Firebase が自動でやり直すので重ならない
   const bookOf = n => String(Math.floor((n - 1) / 100));
-  async function foldShared(msg, from, color, img) {
+  async function foldShared(msg, from, color, img, glow) {
     const counterRef = doc(db, "meta", "counter");
     const n = await runTransaction(db, async tx => {
       const snap = await tx.get(counterRef);
       const n = (snap.exists() ? snap.data().count : 0) + 1;
       const crane = { n, msg, from, color, hasImg: !!img, at: serverTimestamp() };
+      if (glow) crane.glow = true;   // 光らせる鶴だけに印をつける
       tx.set(counterRef, { count: n });
       tx.set(doc(db, "books", bookOf(n)), { c: { [String(n)]: crane } }, { merge: true });
       if (img) tx.set(doc(db, "images", String(n)), { img });
@@ -1483,13 +1523,13 @@ const firebaseConfig = {
     { msg: "元気になったらまた夜通しゲームしよう！", from: "tsukasa", color: "beni" },
     { msg: "あなたの言葉にたくさん救われてきました。今度はこちらが応援する番です。", from: "ふじ", color: "fuji" },
     { msg: "ごはん食べて、あったかくして寝てね。", from: "", color: "sakura" },
-    { msg: "千羽そろうまでみんなで折ります。", from: "Leo", color: "wakatake" },
+    { msg: "百羽そろうまでみんなで折ります。", from: "Leo", color: "wakatake" },
     { msg: "待ってるよ〜！", from: "ぽん", color: "kogane" },
   ];
   let keepLocal = true;   // #demo のダミー表示では、折った鶴を残さない
-  function foldLocal(msg, from, color, img) {
+  function foldLocal(msg, from, color, img, glow) {
     const n = cranes.length + 1;
-    cranes.push({ n, msg, from, color, img: img || undefined, mine: true });
+    cranes.push({ n, msg, from, color, img: img || undefined, glow: glow || undefined, mine: true });
     if (keepLocal) try { localStorage.setItem(LS_KEY, JSON.stringify(cranes.filter(c => c.mine))); } catch {}
     return n;
   }
@@ -1517,7 +1557,7 @@ const firebaseConfig = {
       const s = SAMPLES[i % SAMPLES.length];
       const r = rand();
       const color = r < .1 ? "#" + Math.floor(rand() * 0xffffff).toString(16).padStart(6, "0") : COLORS[Math.floor(r * COLORS.length)].id;
-      return { n: i + 1, msg: s.msg, from: s.from, color };
+      return { n: i + 1, msg: s.msg, from: s.from, color, glow: i % 13 === 4 || undefined };   // 見本として、ところどころ光らせる
     });
     render();
   }
