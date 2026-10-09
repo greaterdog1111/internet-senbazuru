@@ -10,7 +10,7 @@
 <meta property="og:title" content="インターネット百羽鶴">
 <meta property="og:description" content="メッセージを書くと鶴が一羽折れます。百羽集まると何かが…？">
 <meta property="og:url" content="https://greaterdog1111.github.io/internet-senbazuru/">
-<meta property="og:image" content="https://greaterdog1111.github.io/internet-senbazuru/ogp.png">
+<meta property="og:image" content="https://greaterdog1111.github.io/internet-senbazuru/ogp.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="ja_JP">
@@ -738,6 +738,12 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
 .letter.glow { box-shadow: 8px 8px 0 var(--line-k), 0 0 0 4px #ffd400, 0 0 40px 8px rgba(255,212,0,.55); }
 
 .goal-done { font-family: var(--f-display); font-weight: 400; color: #111; background: var(--yellow); border: 2px solid var(--line-k); border-radius: 6px; padding: 0 8px; }
+
+/* 流れる動画 */
+.event-area { display: grid; gap: 8px; justify-items: center; width: 100%; }
+.event-area video { width: min(100%, 520px); border: 3px solid var(--line-k); border-radius: 10px; box-shadow: 6px 6px 0 var(--k); background: #000; }
+.video-by { margin: 0; font-family: var(--f-pixel); font-size: 13px; color: var(--fg); }
+.video-by:empty { display: none; }
 </style>
 <script>
   // 前回選んだナイトモードを、表示の前に反映する
@@ -919,11 +925,41 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
     sync();
   })();
 
-  // 鶴が集まると何かが起きるボタン（いまは準備中のお知らせだけ）
+  // 鶴が集まると何かが起きるボタン：届いた動画の中からランダムで1本流す
+  // ▼ 動画が届いたら、GitHub の videos フォルダに mp4 を入れて、ここに1行ずつ足す
+  //   src … ファイルの場所　by … 作った人の名前（出さないときは "" のまま）
+  const VIDEOS = [
+     { src: "videos/01.mp4", by: "daigolila.exe" },
+     { src: "videos/02.mp4", by: "daigolila.exe" },
+  ];
+  // ▲ ここまで
+  const LOCK_UNTIL_GOAL = False;   // true なら、百羽集まるまでは動画を見られない
+  const GOAL = 100;
+  let craneTotal = 0, lastVideo = -1;
+  addEventListener("cranecount", e => { craneTotal = e.detail; });
   document.getElementById("event-btn").addEventListener("click", () => {
     const area = document.getElementById("event-area");
-    area.textContent = "実装をお待ちください";
     area.hidden = false;
+    if (!VIDEOS.length) { area.textContent = "実装をお待ちください"; return; }
+    if (LOCK_UNTIL_GOAL && craneTotal < GOAL) {
+      area.textContent = `百羽集まると見られます。あと ${GOAL - craneTotal} 羽！`;
+      return;
+    }
+    // 前回と同じ動画が続かないように選ぶ
+    let k = Math.floor(Math.random() * VIDEOS.length);
+    if (VIDEOS.length > 1 && k === lastVideo) k = (k + 1 + Math.floor(Math.random() * (VIDEOS.length - 1))) % VIDEOS.length;
+    lastVideo = k;
+    const v = VIDEOS[k];
+    const video = document.createElement("video");
+    video.src = v.src; video.controls = true; video.autoplay = true; video.playsInline = true;
+    video.setAttribute("playsinline", "");
+    const cap = document.createElement("p");
+    cap.className = "video-by";
+    cap.textContent = v.by ? `作：${v.by}` : "";
+    video.addEventListener("error", () => { area.textContent = "動画を読み込めませんでした。もう一度押してみてください。"; });
+    area.replaceChildren(video, cap);
+    video.play().catch(() => {});   // ボタンを押した直後なので、音ありでも再生できる
+    video.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 </script>
 <script>
