@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="みんなでメッセージを書いて折り鶴を量産しよう！折り鶴が増えると何かが起きるかもしれない">
 <title>インターネット千羽鶴</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="インターネット千羽鶴">
+<meta property="og:title" content="インターネット千羽鶴">
+<meta property="og:description" content="メッセージを書くと鶴が一羽折れます。千羽集まると何かが…？">
+<meta property="og:url" content="https://greaterdog1111.github.io/internet-senbazuru/">
+<meta property="og:image" content="https://greaterdog1111.github.io/internet-senbazuru/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#efeaff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
@@ -662,6 +673,22 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
 @media (max-width: 520px) {
   .to-tag { right: 0; bottom: 4px; }   /* スマホでは2行目「千羽鶴」の右の空いたところに */
 }
+
+.loading-note { margin: 0; font-size: 13px; color: var(--muted); }
+@media (max-width: 520px) {
+  /* ナイトモードボタンは小さくして画面の端に寄せ、入力欄や色見本に重ならないように */
+  .theme-toggle { width: 36px; height: 36px; right: calc(8px + env(safe-area-inset-right, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .theme-toggle svg { width: 17px; height: 17px; }
+}
+
+/* スマホのときだけ、タイトルの色に白をもう少しだけ混ぜる */
+@media (max-width: 520px) {
+  h1 .ch:nth-child(5n+1) { --c: #ff67b7; }
+  h1 .ch:nth-child(5n+2) { --c: #ffe835; }
+  h1 .ch:nth-child(5n+3) { --c: #59ed98; }
+  h1 .ch:nth-child(5n+4) { --c: #50d0ff; }
+  h1 .ch:nth-child(5n+5) { --c: #b07eff; }
+}
 </style>
 <script>
   // 前回選んだナイトモードを、表示の前に反映する
@@ -750,6 +777,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
         <div class="strands" id="strands"></div>
       </div>
     </div>
+    <p class="loading-note" id="loading" role="status">鶴を読み込んでいます…</p>
     <div class="empty" id="empty" hidden>
       <strong>まだ一羽も折られていません</strong>
       上のフォームにメッセージを書くと、No.0001 の鶴がここに集まります。
@@ -966,7 +994,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
                     "#79b4dc","#2f5d9e","#22386a","#a08cc8","#6b3f8a","#8b5a3c","#3a3a3e","#f4f2ec","#c9a64a","#b4b9c0"];
     // ページの鶴と同じ形（座標は 100×78 の中）。[点の並び, 重ねるかげ]
     const SHAPE = [
-      ["53,44 69,4 61,47.5", "rgba(0,0,0,.28)"], ["61,47.5 83,11 86,13 67,50", "rgba(0,0,0,.1)"],
+      ["53,44 69,4 61,47.5", "rgba(0,0,0,.28)"], ["61,47.5 88,9 67,50", "rgba(0,0,0,.1)"],
       ["35,52 19,19 23,19 42,50", null],
       ["19,19 23,19 8,27", "rgba(0,0,0,.15)"], ["35,52 50,43 67,50 52,75", null],
       ["50,43 67,50 52,75", "rgba(0,0,0,.14)"], ["42,48 60,1 61,46", "rgba(255,255,255,.14)"],
@@ -1054,7 +1082,7 @@ const firebaseConfig = {
     { id: "sumi", name: "墨", hex: "#3a3a3e" },
     { id: "shiro", name: "白", hex: "#f4f2ec" },
     { id: "kogane", name: "金", hex: "#c9a64a" },
-    { id: "gin", name: "銀", hex: "#b4b9c0" },
+    { id: "gin", name: "白", hex: "#b4b9c0" },   // 色は銀のまま、名前は「白」
   ];
   // 色は基本色の id か、自分で選んだ "#rrggbb"。共有データは信用せず形を確かめる
   const colorHex = v => {
@@ -1064,6 +1092,7 @@ const firebaseConfig = {
 
   const $ = id => document.getElementById(id);
   let cranes = [];       // {n, msg, from, color}
+  let loaded = false;   // 鶴の読み込みが終わったか
   let db = null;         // Firestore。設定前（お試し）は null
   let picked = COLORS[0].id;
   let openIdx = -1;
@@ -1074,8 +1103,8 @@ const firebaseConfig = {
     return `<svg viewBox="0 0 100 78" aria-hidden="true">
       <polygon points="53,44 69,4 61,47.5" fill="${hex}"/>
       <polygon points="53,44 69,4 61,47.5" fill="#000" opacity=".28"/>
-      <polygon points="61,47.5 83,11 86,13 67,50" fill="${hex}"/>
-      <polygon points="61,47.5 83,11 86,13 67,50" fill="#000" opacity=".1"/>
+      <polygon points="61,47.5 88,9 67,50" fill="${hex}"/>
+      <polygon points="61,47.5 88,9 67,50" fill="#000" opacity=".1"/>
       <polygon points="35,52 19,19 23,19 42,50" fill="${hex}"/>
       <polygon points="19,19 23,19 8,27" fill="${hex}"/>
       <polygon points="19,19 23,19 8,27" fill="#000" opacity=".15"/>
@@ -1105,7 +1134,9 @@ const firebaseConfig = {
     $("color-name").textContent = name;
     document.querySelectorAll(".swatch").forEach(s => s.setAttribute("aria-checked", s === el));
   }
-  COLORS.forEach(c => {
+  // 色えらびに出すのは、白＋基本の5色＋金だけ（この順に並べる。ほかの色は、前に折られた鶴の表示用に残している）
+  const PICKER = ["gin", "beni", "momo", "yamabuki", "wakatake", "ruri", "kogane"];
+  PICKER.map(id => COLORS.find(c => c.id === id)).forEach(c => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "swatch"; b.style.background = c.hex;
     b.setAttribute("role", "radio"); b.setAttribute("aria-label", c.name); b.title = c.name;
@@ -1132,11 +1163,12 @@ const firebaseConfig = {
 
   function render() {
     const total = cranes.length;
-    $("n-count").textContent = total;
-    $("n-left").textContent = Math.max(0, GOAL - total);
+    $("loading").hidden = loaded;
+    $("n-count").textContent = loaded ? total : "…";
+    $("n-left").textContent = loaded ? Math.max(0, GOAL - total) : "…";
     $("bar").style.width = Math.min(100, total / GOAL * 100) + "%";
     dispatchEvent(new CustomEvent("cranecount", { detail: total }));   // 画面下の鶴の山に羽数を知らせる
-    $("empty").hidden = total > 0;
+    $("empty").hidden = total > 0 || !loaded;   // 読み込み終わるまでは「まだ一羽も…」を出さない
 
     const box = $("strands");
     box.innerHTML = "";
@@ -1414,6 +1446,7 @@ const firebaseConfig = {
     return n;
   }
   function startDemo() {
+    loaded = true;
     $("demo-note").hidden = false;
     cranes = SAMPLES.map((s, i) => ({ n: i + 1, ...s }));
     try {
@@ -1424,6 +1457,7 @@ const firebaseConfig = {
   }
   // URL の最後に #demo をつけると、ダミーの鶴100羽で見た目を確かめられる（本物のデータには触れない）
   function startDummy(count) {
+    loaded = true;
     keepLocal = false;
     persistRead = false;   // ダミーの番号を、本物の既読として残さない
     readSet.clear();
@@ -1459,7 +1493,9 @@ const firebaseConfig = {
   // 束（books）と、以前の形で保存された鶴（cranes）を合わせて番号順に並べる
   let fromBooks = [], legacy = [];
   const valid = c => c && typeof c.n === "number" && typeof c.msg === "string";
+  let gotBooks = false, gotLegacy = false;
   const merge = () => {
+    loaded = gotBooks && gotLegacy;   // 2か所とも届いてから表示する
     const byN = new Map();
     [...legacy, ...fromBooks].forEach(c => byN.set(c.n, c));
     cranes = [...byN.values()].sort((a, b) => a.n - b.n);
@@ -1467,15 +1503,16 @@ const firebaseConfig = {
   };
   const onErr = err => {
     console.error(err);
+    $("loading").hidden = true;
     $("status").textContent = "鶴を読み込めませんでした。ページを開き直してください。";
   };
   onSnapshot(collection(db, "books"), snap => {
     fromBooks = snap.docs.flatMap(d => Object.values(d.data().c || {})).filter(valid);
-    merge();
+    gotBooks = true; merge();
   }, onErr);
   onSnapshot(collection(db, "cranes"), snap => {
     legacy = snap.docs.map(d => d.data()).filter(valid);
-    merge();
+    gotLegacy = true; merge();
   }, onErr);
 })();
 </script>
