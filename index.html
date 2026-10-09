@@ -662,7 +662,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
 }
 @keyframes speedLines { 0% { rotate: 0deg; } 33% { rotate: 1.2deg; } 66% { rotate: -.8deg; } }
 
-/* スマホでは「インターネット／千羽鶴」の2行にして、1行目（7文字）が幅いっぱいになる大きさに */
+/* スマホでは「インターネット／百羽鶴」の2行にして、1行目（7文字）が幅いっぱいになる大きさに */
 .sp-br { display: none; }
 @media (max-width: 520px) {
   .sp-br { display: inline; }
@@ -680,7 +680,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
   box-shadow: 3px 3px 0 var(--line-k); transform: rotate(-4deg);
 }
 @media (max-width: 520px) {
-  .to-tag { right: -10px; bottom: -4px; }   /* スマホでは2行目「千羽鶴」の右の空いたところに */
+  .to-tag { right: -10px; bottom: -4px; }   /* スマホでは2行目「百羽鶴」の右の空いたところに */
 }
 
 .loading-note { margin: 0; font-size: 13px; color: var(--muted); }
@@ -736,6 +736,8 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
 @keyframes glowStar { from { opacity: .5; transform: scale(.8); } to { opacity: 1; transform: scale(1.15); } }
 /* 光る鶴をひらいたときの手紙 */
 .letter.glow { box-shadow: 8px 8px 0 var(--line-k), 0 0 0 4px #ffd400, 0 0 40px 8px rgba(255,212,0,.55); }
+
+.goal-done { font-family: var(--f-display); font-weight: 400; color: #111; background: var(--yellow); border: 2px solid var(--line-k); border-radius: 6px; padding: 0 8px; }
 </style>
 <script>
   // 前回選んだナイトモードを、表示の前に反映する
@@ -755,12 +757,12 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
   <header>
     <div class="title-row">
       <h1 aria-label="インターネット百羽鶴"><span aria-hidden="true"><span class="ch" data-c="イ">イ</span><span class="ch" data-c="ン">ン</span><span class="ch" data-c="タ">タ</span><span class="ch" data-c="ー">ー</span><span class="ch" data-c="ネ">ネ</span><span class="ch" data-c="ッ">ッ</span><span class="ch" data-c="ト">ト</span><br class="sp-br"><span class="ch" data-c="百">百</span><span class="ch" data-c="羽">羽</span><span class="ch" data-c="鶴">鶴</span></span></h1>
-      <!-- ▼ 千羽鶴を贈る相手の名前。「○○」を書きかえる -->
+      <!-- ▼ 百羽鶴を贈る相手の名前。「○○」を書きかえる -->
       <p class="to-tag">to そらと</p>
     </div>
     <p class="lede">メッセージを書くと鶴が一羽折れます。百羽集まると何かが…？</p>
     <div class="progress" aria-live="polite">
-      <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">100</b> 羽</span></div>
+      <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span id="left-wrap">のこり <b id="n-left">100</b> 羽</span></div>
       <div class="bar"><span id="bar"></span></div>
     </div>
   </header>
@@ -1250,7 +1252,9 @@ const firebaseConfig = {
     const total = cranes.length;
     $("loading").hidden = loaded;
     $("n-count").textContent = loaded ? total : "…";
-    $("n-left").textContent = loaded ? Math.max(0, GOAL - total) : "…";
+    // 100羽に届いたら「のこり」の数えはやめて、達成の表示に変える（いまの羽数はそのまま増え続ける）
+    if (loaded && total >= GOAL) $("left-wrap").innerHTML = '<b class="goal-done">百羽達成！</b>';
+    else $("left-wrap").innerHTML = `のこり <b id="n-left">${loaded ? GOAL - total : "…"}</b> 羽`;
     $("bar").style.width = Math.min(100, total / GOAL * 100) + "%";
     dispatchEvent(new CustomEvent("cranecount", { detail: total }));   // 画面下の鶴の山に羽数を知らせる
     $("empty").hidden = total > 0 || !loaded;   // 読み込み終わるまでは「まだ一羽も…」を出さない
