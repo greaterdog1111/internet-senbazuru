@@ -296,10 +296,10 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 .fold-box { position: relative; width: 180px; height: 180px; }
 .fold-paper { position: absolute; inset: 0; animation: paperIn .5s cubic-bezier(.2,.8,.2,1) both, paperOut .35s 1.75s ease forwards; }
 .fold-paper i { position: absolute; inset: 0; background: var(--c); }
-.fold-paper .br { clip-path: polygon(50% 50%, 100% 50%, 50% 100%); }
-.fold-paper .tr { clip-path: polygon(50% 0, 100% 50%, 50% 50%); animation: foldTR 1.2s .55s ease-in-out forwards; }
-.fold-paper .bl { clip-path: polygon(0 50%, 50% 50%, 50% 100%); animation: foldBL 1.2s .55s ease-in-out forwards; }
-.fold-paper .tl { clip-path: polygon(50% 0, 50% 50%, 0 50%); animation: foldTL 1.2s .55s ease-in-out forwards; }
+.fold-paper .br { clip-path: polygon(calc(50% - .6px) calc(50% - .6px), calc(100% + .6px) calc(50% - .6px), 50% calc(100% + .6px)); }
+.fold-paper .tr { clip-path: polygon(50% -.6px, calc(100% + .6px) 50%, calc(50% - .6px) calc(50% + .6px)); animation: foldTR 1.2s .55s ease-in-out forwards; }
+.fold-paper .bl { clip-path: polygon(-.6px calc(50% - .6px), calc(50% + .6px) calc(50% - .6px), calc(50% + .6px) calc(100% + .6px)); animation: foldBL 1.2s .55s ease-in-out forwards; }
+.fold-paper .tl { clip-path: polygon(calc(50% + .6px) -.6px, calc(50% + .6px) calc(50% + .6px), -.6px 50%); animation: foldTL 1.2s .55s ease-in-out forwards; }
 /* 折り目の筋 */
 .fold-paper::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -310,13 +310,15 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, .crane:focus-
 }
 @keyframes paperIn { from { transform: scale(.4) rotate(45deg); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes paperOut { to { transform: scale(.7); opacity: 0; } }
-@keyframes foldTR { 0% { transform: perspective(600px); } 45%, 100% { transform: perspective(600px) rotateX(180deg); filter: brightness(1.15); } }
+/* 折る動き。どの紙片も同じ並びの回転（Y→X）で書いて、途中で回り方が変わらないようにする。
+   こうしないと2回目の折りで左上の紙片だけ別の軌道を通り、紙がちぎれて離れたように見える */
+@keyframes foldTR { 0% { transform: perspective(600px) rotateY(0deg) rotateX(0deg); } 45%, 100% { transform: perspective(600px) rotateY(0deg) rotateX(180deg); filter: brightness(1.15); } }
 @keyframes foldTL {
-  0% { transform: perspective(600px); }
-  45%, 55% { transform: perspective(600px) rotateX(180deg); filter: brightness(1.15); }
+  0% { transform: perspective(600px) rotateY(0deg) rotateX(0deg); }
+  45%, 55% { transform: perspective(600px) rotateY(0deg) rotateX(180deg); filter: brightness(1.15); }
   100% { transform: perspective(600px) rotateY(180deg) rotateX(180deg); filter: brightness(1.05); }
 }
-@keyframes foldBL { 0%, 55% { transform: perspective(600px); } 100% { transform: perspective(600px) rotateY(180deg); filter: brightness(.92); } }
+@keyframes foldBL { 0%, 55% { transform: perspective(600px) rotateY(0deg) rotateX(0deg); } 100% { transform: perspective(600px) rotateY(180deg) rotateX(0deg); filter: brightness(.92); } }
 .fold-crane { position: absolute; inset: -10px; display: grid; place-items: center; opacity: 0; animation: craneIn .55s 1.8s cubic-bezier(.2,.9,.3,1.3) forwards; }
 .fold-crane svg { width: 190px; height: 150px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); }
 @keyframes craneIn { from { opacity: 0; transform: scale(.4) rotate(-20deg); } to { opacity: 1; transform: none; } }
@@ -402,11 +404,12 @@ h1 .ch::before {
 }
 :root { --dot: #ff4fc8; }
 :root[data-theme="dark"] { --dot: #ff6fd0; }
-h1 .ch:nth-child(5n+1) { --c: #ffb3e6; }   /* ピンク */
-h1 .ch:nth-child(5n+2) { --c: #fff59a; }   /* レモン */
-h1 .ch:nth-child(5n+3) { --c: #a8ffd6; }   /* ミント */
-h1 .ch:nth-child(5n+4) { --c: #a9ecff; }   /* そら */
-h1 .ch:nth-child(5n+5) { --c: #d9c2ff; }   /* ラベンダー */
+/* ホログラムの背景や付箋に負けない、はっきりしたポップな5色 */
+h1 .ch:nth-child(5n+1) { --c: #ff3fa4; }   /* ショッキングピンク */
+h1 .ch:nth-child(5n+2) { --c: #ffe100; }   /* イエロー */
+h1 .ch:nth-child(5n+3) { --c: #2ee87c; }   /* グリーン */
+h1 .ch:nth-child(5n+4) { --c: #22c4ff; }   /* シアン */
+h1 .ch:nth-child(5n+5) { --c: #9b5cff; }   /* パープル */
 @keyframes titleFloat { from { translate: 0 -1.5px; } to { translate: 0 1.5px; } }
 .lede { color: var(--fg); font-weight: 500; }
 .progress { max-width: none; }
@@ -647,6 +650,18 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
   /* 集中線は縦長にならないよう、ボタンに合わせた横長の楕円で出す（左右は画面の外に見切れてよい） */
   .event::before { width: 640px; height: 300px; }
 }
+
+/* タイトルの右下に貼る「to ○○」のタグ（贈る相手） */
+.title-row { position: relative; width: fit-content; max-width: 100%; }
+.to-tag {
+  position: absolute; right: -8px; bottom: -16px; z-index: 2; margin: 0;
+  font-family: var(--f-display); font-size: clamp(13px, 2.2vw, 20px); line-height: 1; white-space: nowrap; color: #111;
+  background: #fff; border: 3px solid #111; border-radius: 999px; padding: 6px 14px 7px;
+  box-shadow: 3px 3px 0 #111; transform: rotate(-4deg);
+}
+@media (max-width: 520px) {
+  .to-tag { right: 0; bottom: 4px; }   /* スマホでは2行目「千羽鶴」の右の空いたところに */
+}
 </style>
 <script>
   // 前回選んだナイトモードを、表示の前に反映する
@@ -664,7 +679,11 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
     <div class="spin-crane" id="spin-crane" aria-hidden="true"></div>
   </div>
   <header>
-    <h1 aria-label="インターネット千羽鶴"><span aria-hidden="true"><span class="ch" data-c="イ">イ</span><span class="ch" data-c="ン">ン</span><span class="ch" data-c="タ">タ</span><span class="ch" data-c="ー">ー</span><span class="ch" data-c="ネ">ネ</span><span class="ch" data-c="ッ">ッ</span><span class="ch" data-c="ト">ト</span><br class="sp-br"><span class="ch" data-c="千">千</span><span class="ch" data-c="羽">羽</span><span class="ch" data-c="鶴">鶴</span></span></h1>
+    <div class="title-row">
+      <h1 aria-label="インターネット千羽鶴"><span aria-hidden="true"><span class="ch" data-c="イ">イ</span><span class="ch" data-c="ン">ン</span><span class="ch" data-c="タ">タ</span><span class="ch" data-c="ー">ー</span><span class="ch" data-c="ネ">ネ</span><span class="ch" data-c="ッ">ッ</span><span class="ch" data-c="ト">ト</span><br class="sp-br"><span class="ch" data-c="千">千</span><span class="ch" data-c="羽">羽</span><span class="ch" data-c="鶴">鶴</span></span></h1>
+      <!-- ▼ 千羽鶴を贈る相手の名前。「○○」を書きかえる -->
+      <p class="to-tag">to そらと</p>
+    </div>
     <p class="lede">メッセージを書くと鶴が一羽折れます。千羽集まると何かが…？</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
@@ -947,8 +966,8 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
                     "#79b4dc","#2f5d9e","#22386a","#a08cc8","#6b3f8a","#8b5a3c","#3a3a3e","#f4f2ec","#c9a64a","#b4b9c0"];
     // ページの鶴と同じ形（座標は 100×78 の中）。[点の並び, 重ねるかげ]
     const SHAPE = [
-      ["54,46 69,4 66,48", "rgba(0,0,0,.28)"], ["62,50 83,11 86,13 68,52", "rgba(0,0,0,.1)"],
-      ["58,47 66,38 71,43 69,53 61,51", "rgba(0,0,0,.1)"], ["35,52 19,19 23,19 42,50", null],
+      ["53,44 69,4 61,47.5", "rgba(0,0,0,.28)"], ["61,47.5 83,11 86,13 67,50", "rgba(0,0,0,.1)"],
+      ["35,52 19,19 23,19 42,50", null],
       ["19,19 23,19 8,27", "rgba(0,0,0,.15)"], ["35,52 50,43 67,50 52,75", null],
       ["50,43 67,50 52,75", "rgba(0,0,0,.14)"], ["42,48 60,1 61,46", "rgba(255,255,255,.14)"],
     ].map(([pts, shade]) => [pts.split(" ").map(p => p.split(",").map(Number)), shade]);
@@ -1053,12 +1072,10 @@ const firebaseConfig = {
   // 鶴の形（横から見た折り鶴）。羽は上に立ち、左に首と折れた頭、右に尾。紙の色にかげを重ねて立体に見せる
   function craneSVG(hex) {
     return `<svg viewBox="0 0 100 78" aria-hidden="true">
-      <polygon points="54,46 69,4 66,48" fill="${hex}"/>
-      <polygon points="54,46 69,4 66,48" fill="#000" opacity=".28"/>
-      <polygon points="62,50 83,11 86,13 68,52" fill="${hex}"/>
-      <polygon points="62,50 83,11 86,13 68,52" fill="#000" opacity=".1"/>
-      <polygon points="58,47 66,38 71,43 69,53 61,51" fill="${hex}"/>
-      <polygon points="58,47 66,38 71,43 69,53 61,51" fill="#000" opacity=".1"/>
+      <polygon points="53,44 69,4 61,47.5" fill="${hex}"/>
+      <polygon points="53,44 69,4 61,47.5" fill="#000" opacity=".28"/>
+      <polygon points="61,47.5 83,11 86,13 67,50" fill="${hex}"/>
+      <polygon points="61,47.5 83,11 86,13 67,50" fill="#000" opacity=".1"/>
       <polygon points="35,52 19,19 23,19 42,50" fill="${hex}"/>
       <polygon points="19,19 23,19 8,27" fill="${hex}"/>
       <polygon points="19,19 23,19 8,27" fill="#000" opacity=".15"/>
