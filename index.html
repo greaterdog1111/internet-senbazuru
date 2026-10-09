@@ -638,6 +638,15 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
   opacity: .8; animation: speedLines .3s steps(1) infinite;
 }
 @keyframes speedLines { 0% { rotate: 0deg; } 33% { rotate: 1.2deg; } 66% { rotate: -.8deg; } }
+
+/* スマホでは「インターネット／千羽鶴」の2行にして、1行目（7文字）が幅いっぱいになる大きさに */
+.sp-br { display: none; }
+@media (max-width: 520px) {
+  .sp-br { display: inline; }
+  h1 { font-size: clamp(16px, calc((100vw - 40px - 54px - 10px) / 7.5), 52px); line-height: 1.2; }
+  /* 集中線は縦長にならないよう、ボタンに合わせた横長の楕円で出す（左右は画面の外に見切れてよい） */
+  .event::before { width: 640px; height: 300px; }
+}
 </style>
 <script>
   // 前回選んだナイトモードを、表示の前に反映する
@@ -655,7 +664,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
     <div class="spin-crane" id="spin-crane" aria-hidden="true"></div>
   </div>
   <header>
-    <h1 aria-label="インターネット千羽鶴"><span aria-hidden="true"><span class="ch" data-c="イ">イ</span><span class="ch" data-c="ン">ン</span><span class="ch" data-c="タ">タ</span><span class="ch" data-c="ー">ー</span><span class="ch" data-c="ネ">ネ</span><span class="ch" data-c="ッ">ッ</span><span class="ch" data-c="ト">ト</span><span class="ch" data-c="千">千</span><span class="ch" data-c="羽">羽</span><span class="ch" data-c="鶴">鶴</span></span></h1>
+    <h1 aria-label="インターネット千羽鶴"><span aria-hidden="true"><span class="ch" data-c="イ">イ</span><span class="ch" data-c="ン">ン</span><span class="ch" data-c="タ">タ</span><span class="ch" data-c="ー">ー</span><span class="ch" data-c="ネ">ネ</span><span class="ch" data-c="ッ">ッ</span><span class="ch" data-c="ト">ト</span><br class="sp-br"><span class="ch" data-c="千">千</span><span class="ch" data-c="羽">羽</span><span class="ch" data-c="鶴">鶴</span></span></h1>
     <p class="lede">メッセージを書くと鶴が一羽折れます。千羽集まると何かが…？</p>
     <div class="progress" aria-live="polite">
       <div class="progress-label"><span>いま <b id="n-count">0</b> 羽</span><span>のこり <b id="n-left">1000</b> 羽</span></div>
