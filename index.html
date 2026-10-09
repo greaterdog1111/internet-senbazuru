@@ -933,7 +933,7 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
      { src: "02.mp4", by: "daigolila.exe" },
   ];
   // ▲ ここまで
-  const LOCK_UNTIL_GOAL = false;   // true なら、百羽集まるまでは動画を見られない
+  const LOCK_UNTIL_GOAL = true;   // true なら、百羽集まるまでは動画を見られない
   const GOAL = 100;
   let craneTotal = 0, lastVideo = -1;
   addEventListener("cranecount", e => { craneTotal = e.detail; });
