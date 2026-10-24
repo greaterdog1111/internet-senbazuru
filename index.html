@@ -929,8 +929,9 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
   // ▼ 動画が届いたら、GitHub の videos フォルダに mp4 を入れて、ここに1行ずつ足す
   //   src … ファイルの場所　by … 作った人の名前（出さないときは "" のまま）
   const VIDEOS = [
-     { src: "01.mp4", by: "daigorilla.exe" },
-     { src: "02.mp4", by: "daigorilla.exe" },
+     { src: "01.mp4", by: "daigorilla.exe", weight: 1 },
+     { src: "02.mp4", by: "daigorilla.exe" weight: 20 },
+    { src: "03.mp4", by: "d-o-g", weight: 29},
   ];
   // ▲ ここまで
   const LOCK_UNTIL_GOAL = true;   // true なら、百羽集まるまでは動画を見られない
@@ -945,10 +946,10 @@ html, body { overflow-x: clip; }   /* 集中線が画面の外にはみ出して
       area.textContent = `百羽集まると見られます。あと ${GOAL - craneTotal} 羽！`;
       return;
     }
-    // 前回と同じ動画が続かないように選ぶ
-    let k = Math.floor(Math.random() * VIDEOS.length);
-    if (VIDEOS.length > 1 && k === lastVideo) k = (k + 1 + Math.floor(Math.random() * (VIDEOS.length - 1))) % VIDEOS.length;
-    lastVideo = k;
+    // weight の大きさに応じて選ぶ（weight がないものは 1 として扱う）
+    const total = VIDEOS.reduce((s, x) => s + (x.weight ?? 1), 0);
+    let r = Math.random() * total, k = 0;
+    while (r >= (VIDEOS[k].weight ?? 1)) { r -= (VIDEOS[k].weight ?? 1); k++; }
     const v = VIDEOS[k];
     const video = document.createElement("video");
     video.src = v.src; video.controls = true; video.autoplay = true; video.playsInline = true;
